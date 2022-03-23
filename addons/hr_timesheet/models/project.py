@@ -65,18 +65,7 @@ class Project(models.Model):
                     project._create_analytic_account()
         result = super(Project, self).write(values)
         return result
-
-    @api.multi
-    def unlink(self):
-        """ Delete the empty related analytic account """
-        analytic_accounts_to_delete = self.env['account.analytic.account']
-        for project in self:
-            if project.analytic_account_id and not project.analytic_account_id.line_ids:
-                analytic_accounts_to_delete |= project.analytic_account_id
-        result = super(Project, self).unlink()
-        analytic_accounts_to_delete.unlink()
-        return result
-
+    
     @api.model
     def _init_data_analytic_account(self):
         self.search([('analytic_account_id', '=', False), ('allow_timesheets', '=', True)])._create_analytic_account()
