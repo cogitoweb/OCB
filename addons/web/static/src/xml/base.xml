@@ -1393,13 +1393,13 @@
             <div class="o_import_compat">
                 <div class="radio">
                     <label>
-                        <input type="radio" name="o_import_compat_name" value="" checked="checked"/>
+                        <input type="radio" name="o_import_compat_name" value="yes" checked="checked"/>
                         Use data in a spreadsheet (export all data)
                     </label>
                 </div>
                 <div class="radio">
                     <label>
-                        <input type="radio" name="o_import_compat_name" value="yes"/>
+                        <input type="radio" name="o_import_compat_name" value=""/>
                         Update data (import-compatible export)
                     </label>
                 </div>
