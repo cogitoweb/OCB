@@ -1441,12 +1441,13 @@ class ExportFormat(object):
         """
         raise NotImplementedError()
 
-    def from_data(self, fields, rows):
+    def from_data(self, fields, rows, import_compat=False):
         """ Conversion method from Odoo's export data to whatever the
         current export class outputs
 
         :params list fields: a list of fields to export
         :params list rows: a list of records to export
+        :params boolean import_compat: export format
         :returns:
         :rtype: bytes
         """
@@ -1473,13 +1474,16 @@ class ExportFormat(object):
         else:
             columns_headers = [val['label'].strip() for val in fields]
 
-        return request.make_response(self.from_data(columns_headers, import_data),
+        return request.make_response(self.from_data(columns_headers, import_data, import_compat),
             headers=[('Content-Disposition',
                             content_disposition(self.filename(model))),
                      ('Content-Type', self.content_type)],
             cookies={'fileToken': token})
 
 class CSVExport(ExportFormat, http.Controller):
+
+    # CGT -> even csv needs raw data for dates
+    raw_data = True
 
     @http.route('/web/export/csv', type='http', auth="user")
     @serialize_exception
@@ -1493,18 +1497,36 @@ class CSVExport(ExportFormat, http.Controller):
     def filename(self, base):
         return base + '.csv'
 
-    def from_data(self, fields, rows):
+    def from_data(self, fields, rows, import_compat=False):
         fp = io.BytesIO()
         writer = pycompat.csv_writer(fp, quoting=1)
 
         writer.writerow(fields)
 
-        for data in rows:
+        lang = request.env['res.lang'].sudo().search(
+                    [('code', '=', request.env.user.lang)]
+                )
+        if not lang:
+            request.env['res.lang'].sudo().search(
+                [('active', '=', True)], limit=1
+            )
+
+        for row_index, data in enumerate(rows):
+
             row = []
-            for d in data:
+            for cell_index, d in enumerate(data):
+
                 # Spreadsheet apps tend to detect formulas on leading =, + and -
                 if isinstance(d, pycompat.string_types) and d.startswith(('=', '-', '+')):
                     d = "'" + d
+
+                elif isinstance(d, datetime.datetime):
+                    if not import_compat:
+                        d = d.strftime("%s %s" % (lang.date_format, lang.time_format))
+
+                elif isinstance(d, datetime.date):
+                    if not import_compat:
+                        d = d.strftime("%s" % (lang.date_format))
 
                 row.append(pycompat.to_text(d))
             writer.writerow(row)
@@ -1528,7 +1550,7 @@ class ExcelExport(ExportFormat, http.Controller):
     def filename(self, base):
         return base + '.xls'
 
-    def from_data(self, fields, rows):
+    def from_data(self, fields, rows, import_compat=False):
         if len(rows) > self.max_rows:
             raise UserError(_('There are too many rows (%s rows, limit: 65535) to export as Excel 97-2003 (.xls) format. Consider splitting the export.') % len(rows))
 
@@ -1540,8 +1562,11 @@ class ExcelExport(ExportFormat, http.Controller):
             worksheet.col(i).width = 8000 # around 220 pixels
 
         base_style = xlwt.easyxf('align: wrap yes')
-        date_style = xlwt.easyxf('align: wrap yes', num_format_str='YYYY-MM-DD')
-        datetime_style = xlwt.easyxf('align: wrap yes', num_format_str='YYYY-MM-DD HH:mm:SS')
+        # CGT -> prevent excel wrong formatting
+        # date_style = xlwt.easyxf('align: wrap yes', num_format_str='YYYY-MM-DD')
+        # datetime_style = xlwt.easyxf('align: wrap yes', num_format_str='YYYY-MM-DD HH:mm:SS')
+        date_style = base_style
+        datetime_style = base_style
 
         for row_index, row in enumerate(rows):
             for cell_index, cell_value in enumerate(row):
@@ -1557,14 +1582,30 @@ class ExcelExport(ExportFormat, http.Controller):
                     except UnicodeDecodeError:
                         raise UserError(_("Binary fields can not be exported to Excel unless their content is base64-encoded. That does not seem to be the case for %s.") % fields[cell_index])
 
+                lang = request.env['res.lang'].sudo().search(
+                    [('code', '=', request.env.user.lang)]
+                )
+                if not lang:
+                    request.env['res.lang'].sudo().search(
+                        [('active', '=', True)], limit=1
+                    )
+
                 if isinstance(cell_value, pycompat.string_types):
                     cell_value = re.sub("\r", " ", pycompat.to_text(cell_value))
                     # Excel supports a maximum of 32767 characters in each cell:
                     cell_value = cell_value[:32767]
                 elif isinstance(cell_value, datetime.datetime):
                     cell_style = datetime_style
+
+                    if not import_compat:
+                        cell_value = cell_value.strftime("%s %s" % (lang.date_format, lang.time_format))
+
                 elif isinstance(cell_value, datetime.date):
                     cell_style = date_style
+
+                    if not import_compat:
+                        cell_value = cell_value.strftime("%s" % (lang.date_format))
+
                 elif isinstance(cell_value, (list, tuple)):
                     cell_value = pycompat.to_text(cell_value)
                 worksheet.write(row_index + 1, cell_index, cell_value, cell_style)
