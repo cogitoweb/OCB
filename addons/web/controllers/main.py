@@ -1353,7 +1353,7 @@ class Export(http.Controller):
                 ref = field.pop('relation')
                 if import_compat and field.get('type') in ['many2one', 'many2many']:
                     record['id'] += '/id'
-                record['value'] += '/id'
+                    record['value'] += '/id'  # CGT -> fix here (add/id only if import_compat)
                 record['params'] = {'model': ref, 'prefix': id, 'name': name, 'parent_field': field}
                 record['children'] = True
 
