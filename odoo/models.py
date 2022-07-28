@@ -780,6 +780,7 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
                         # 'display_name' where no subfield is exported
                         fields2 = [(p[1:] or ['display_name'] if p and p[0] == name else [])
                                    for p in fields]
+
                         lines2 = value._export_rows(fields2, _is_toplevel_call=False)
                         if lines2:
                             # merge first line with record's main line
