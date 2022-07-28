@@ -1399,7 +1399,7 @@
                 </div>
                 <div class="radio">
                     <label>
-                        <input type="radio" name="o_import_compat_name" value="yes"/>
+                        <input type="radio" name="o_import_compat_name" value="1"/>
                         Update data (import-compatible export)
                     </label>
                 </div>

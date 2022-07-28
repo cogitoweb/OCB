@@ -48,6 +48,8 @@ from odoo.exceptions import AccessError, UserError, AccessDenied
 from odoo.models import check_method_name
 from odoo.service import db, security
 
+from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DF, DEFAULT_SERVER_DATETIME_FORMAT as DTF
+
 _logger = logging.getLogger(__name__)
 
 if hasattr(sys, 'frozen'):
@@ -1599,12 +1601,16 @@ class ExcelExport(ExportFormat, http.Controller):
 
                     if not import_compat:
                         cell_value = cell_value.strftime("%s %s" % (lang.date_format, lang.time_format))
+                    else:
+                        cell_value = cell_value.strftime(DTF)
 
                 elif isinstance(cell_value, datetime.date):
                     cell_style = date_style
 
                     if not import_compat:
                         cell_value = cell_value.strftime("%s" % (lang.date_format))
+                    else:
+                        cell_value = cell_value.strftime(DF)
 
                 elif isinstance(cell_value, (list, tuple)):
                     cell_value = pycompat.to_text(cell_value)

@@ -479,7 +479,7 @@ var DataExport = Dialog.extend({
             Dialog.alert(this, _t("Please select fields to export..."));
             return;
         }
-        if (!this.isCompatibleMode) {
+        if (this.isCompatibleMode) {
             exported_fields.unshift({name: 'id', label: _t('External ID')});
         }
 
@@ -494,7 +494,7 @@ var DataExport = Dialog.extend({
                 ids: this.ids_to_export,
                 domain: this.domain,
                 context: pyUtils.eval('contexts', [this.record.getContext()]),
-                import_compat: !!this.$import_compat_radios.filter(':checked').val(),
+                import_compat: this.isCompatibleMode,
             })},
             complete: framework.unblockUI,
             error: crash_manager.rpc_error.bind(crash_manager),
