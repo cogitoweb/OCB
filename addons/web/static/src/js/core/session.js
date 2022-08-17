@@ -247,7 +247,9 @@ var Session = core.Class.extend(mixins.EventDispatcherMixin, {
     },
     load_qweb: function (mods) {
         this.qweb_mutex.exec(function () {
-            return $.get('/web/webclient/qweb?mods=' + mods).then(function (doc) {
+            // return $.get('/web/webclient/qweb?mods=' + mods).then(function (doc) { -> CGT patch
+            return $.get('/web/webclient/qweb?mods=guess').then(function (doc) {
+                
                 if (!doc) { return; }
                 qweb.add_template(doc);
             });

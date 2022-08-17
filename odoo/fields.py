@@ -12,6 +12,7 @@ import itertools
 import logging
 import base64
 
+import binascii
 import pytz
 
 try:
@@ -1876,8 +1877,23 @@ class Binary(Field):
             return None
         # Detect if the binary content is an SVG for restricting its upload
         # only to system users.
-        if value[:1] == b'P':  # Fast detection of first 6 bits of '<' (0x3C)
-            decoded_value = base64.b64decode(value)
+        
+        # if value[:1] == b'P':  # Fast detection of first 6 bits of '<' (0x3C)
+        #    decoded_value = base64.b64decode(value) -> CGT patch
+
+        magic_bytes = {
+            b'P',  # first 6 bits of '<' (0x3C) b64 encoded
+            b'<',  # plaintext XML tag opening
+        }
+        if isinstance(value, str):
+            value = value.encode()
+        if value[:1] in magic_bytes:
+            try:
+                decoded_value = base64.b64decode(value.translate(None, delete=b'\r\n'), validate=True)
+            except binascii.Error:
+                decoded_value = value
+
+        # CGT end patch
             # Full mimetype detection
             if (guess_mimetype(decoded_value).startswith('image/svg') and
                     not record.env.user._is_system()):
