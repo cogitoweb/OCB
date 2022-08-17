@@ -1136,6 +1136,24 @@ else:
     def html_escape(text):
         return werkzeug.utils.escape(text)
 
+def get_lang(env, lang_code=False):
+    """
+    Retrieve the first lang object installed, by checking the parameter lang_code,
+    the context and then the company. If no lang is installed from those variables,
+    fallback on the first lang installed in the system.
+    :param str lang_code: the locale (i.e. en_US)
+    :return res.lang: the first lang found that is installed on the system.
+    """
+    langs = [code for code, _ in env['res.lang'].get_installed()]
+    lang = langs[0]
+    if lang_code and lang_code in langs:
+        lang = lang_code
+    elif env.context.get('lang') in langs:
+        lang = env.context.get('lang')
+    elif env.user.company_id.partner_id.lang in langs:
+        lang = env.user.company_id.partner_id.lang
+    return env['res.lang']._lang_get(lang)
+
 def babel_locale_parse(lang_code):
     try:
         return babel.Locale.parse(lang_code)
@@ -1163,7 +1181,7 @@ def formatLang(env, value, digits=None, grouping=True, monetary=False, dp=False,
             digits = currency_obj.decimal_places
         elif (hasattr(value, '_field') and getattr(value._field, 'digits', None)):
                 digits = value._field.digits[1]
-                if not digits and digits is not 0:
+                if not digits and digits != 0:
                     digits = DEFAULT_DIGITS
 
     if isinstance(value, pycompat.string_types) and not value:
