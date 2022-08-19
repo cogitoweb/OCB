@@ -33,10 +33,10 @@ QUnit.module('calendar', {
         };
     },
 }, function () {
-    QUnit.test("many2manyattendee widget: basic rendering", async function (assert) {
+    QUnit.test("many2manyattendee widget: basic rendering", function (assert) {
         assert.expect(9);
 
-        var form = await createView({
+        var form = createView({
             View: FormView,
             model: 'event',
             data: this.data,
@@ -53,7 +53,7 @@ QUnit.module('calendar', {
                         "the partner ids should be passed as argument");
                     assert.strictEqual(args.args[1], 14,
                         "the event id should be passed as argument");
-                    return Promise.resolve([
+                    return $.when([
                         [1, "Jesus", "accepted", 0],
                         [2, "Mahomet", "needsAction", 0],
                     ]);
@@ -62,16 +62,16 @@ QUnit.module('calendar', {
             },
         });
 
-        assert.hasClass(form.$('.o_field_widget[name="partner_ids"]'), 'o_field_many2manytags');
-        assert.containsN(form, '.o_field_widget[name="partner_ids"] .badge', 2,
+        assert.ok(form.$('.o_field_widget[name="partner_ids"]').hasClass('o_field_many2manytags'));
+        assert.strictEqual(form.$('.o_field_widget[name="partner_ids"] .badge').length, 2,
             "there should be 2 tags");
         assert.strictEqual(form.$('.o_field_widget[name="partner_ids"] .badge:first').text().trim(), "Jesus",
             "the tag should be correctly named");
-        assert.hasClass(form.$('.o_field_widget[name="partner_ids"] .badge:first .o_calendar_invitation'),'accepted',
+        assert.ok(form.$('.o_field_widget[name="partner_ids"] .badge:first .o_calendar_invitation').hasClass('accepted'),
             "Jesus should attend the meeting");
         assert.strictEqual(form.$('.o_field_widget[name="partner_ids"] .badge[data-id="2"]').text().trim(), "Mahomet",
             "the tag should be correctly named");
-        assert.hasClass(form.$('.o_field_widget[name="partner_ids"] .badge[data-id="2"] .o_calendar_invitation'),'needsAction',
+        assert.ok(form.$('.o_field_widget[name="partner_ids"] .badge[data-id="2"] .o_calendar_invitation').hasClass('needsAction'),
             "Mohamet should still confirm his attendance to the meeting");
 
         form.destroy();
