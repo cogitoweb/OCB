@@ -14,6 +14,7 @@ import time
 from email.header import decode_header, Header
 from email.utils import getaddresses, formataddr
 from lxml import etree
+from werkzeug import urls
 
 import odoo
 from odoo.loglevels import ustr
@@ -268,9 +269,35 @@ def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=Fals
 
     return cleaned
 
-#----------------------------------------------------------
+# ----------------------------------------------------------
 # HTML/Text management
-#----------------------------------------------------------
+# ----------------------------------------------------------
+
+URL_REGEX = r'(\bhref=[\'"](?!mailto:|tel:|sms:)([^\'"]+)[\'"])'
+TEXT_URL_REGEX = r'https?://[a-zA-Z0-9@:%._\+~#=/-]+(?:\?\S+)?'
+# retrieve inner content of the link
+HTML_TAG_URL_REGEX = URL_REGEX + r'([^<>]*>([^<>]+)<\/)?'
+
+
+def validate_url(url):
+    if urls.url_parse(url).scheme not in ('http', 'https', 'ftp', 'ftps'):
+        return 'http://' + url
+
+    return url
+
+
+def is_html_empty(html_content):
+    """Check if a html content is empty. If there are only formatting tags or
+    a void content return True. Famous use case if a '<p><br></p>' added by
+    some web editor.
+
+    :param str html_content: html content, coming from example from an HTML field
+    :returns: bool, True if no content found or if containing only void formatting tags
+    """
+    if not html_content:
+        return True
+    tag_re = re.compile(r'\<\s*\/?(?:p|div|span|br|b|i)\s*/?\s*\>')
+    return not bool(re.sub(tag_re, '', html_content).strip())
 
 def html_keep_url(text):
     """ Transform the url into clickable link with <a/> tag """
@@ -514,6 +541,21 @@ def email_split_and_format(text):
                 # is strictly required in RFC2822's `addr-spec`.
                 if addr[1]
                 if '@' in addr[1]]
+
+def email_normalize(text):
+    """ Sanitize and standardize email address entries.
+        A normalized email is considered as :
+        - having a left part + @ + a right part (the domain can be without '.something')
+        - being lower case
+        - having no name before the address. Typically, having no 'Name <>'
+        Ex:
+        - Possible Input Email : 'Name <NaMe@DoMaIn.CoM>'
+        - Normalized Output Email : 'name@domain.com'
+    """
+    emails = email_split(text)
+    if not emails or len(emails) != 1:
+        return False
+    return emails[0].lower()
 
 def email_escape_char(email_address):
     """ Escape problematic characters in the given email address string"""
