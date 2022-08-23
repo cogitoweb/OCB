@@ -9,6 +9,12 @@
         </xpath>
     </template>
 
+    <template id="qunit_suite" inherit_id="web.qunit_suite">
+        <xpath expr="//script[last()]" position="after">
+            <script type="text/javascript" src="/calendar/static/tests/calendar_tests.js"/>
+            <script type="text/javascript" src="/calendar/static/tests/systray_activity_menu_tests.js"/>
+        </xpath>
+    </template>
 
     <!-- Template rendered in route auth=None, for anonymous user. This allow them to see meeting details -->
     <template id="invitation_page_anonymous" name="Calendar Invitation Page for anonymous users">
@@ -20,7 +26,7 @@
 
             <div class="container">
                 <div class="o_logo">
-                    <img t-attf-src="/web/binary/company_logo?company={{ company.id }}" alt="Logo"/>
+                    <img class="img img-fluid d-block mx-auto" src="/web/binary/company_logo" alt="Logo"/>
                 </div>
 
                 <div class="card">
@@ -32,8 +38,6 @@
                             <span class="float-right badge badge-info">
                                 <t t-if="attendee.state == 'accepted'">Yes I'm going.</t>
                                 <t t-if="attendee.state == 'declined'">No I'm not going.</t>
-                                <t t-if="attendee.state == 'tentative'">Tentative</t>
-                                <t t-if="attendee.state == 'needsAction'">No feedback yet</t>
                             </span>
                         </div>
 
@@ -60,10 +64,6 @@
                                             </li>
                                         </ul>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <th>Description</th>
-                                    <td><t t-esc="event.description or '-'"/></td>
                                 </tr>
                             </table>
                         </div>
