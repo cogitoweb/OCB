@@ -23,7 +23,7 @@ class User(models.Model):
     google_calendar_token_validity = fields.Datetime('Token Validity', copy=False)
     google_calendar_sync_token = fields.Char('Next Sync Token', copy=False)
     google_calendar_cal_id = fields.Char('Calendar ID', copy=False, help='Last Calendar ID who has been synchronized. If it is changed, we remove all links between GoogleID and Odoo Google Internal ID')
-    microsoft_calendar_last_sync_date = fields.Datetime()
+    google_calendar_last_sync_date = fields.Datetime()
 
     def _set_auth_tokens(self, access_token, refresh_token, ttl):
         self.write({
