@@ -19,6 +19,7 @@ class User(models.Model):
     _inherit = 'res.users'
 
     microsoft_calendar_sync_token = fields.Char('Microsoft Next Sync Token', copy=False)
+    microsoft_calendar_last_sync_date = fields.Datetime()
 
     def _microsoft_calendar_authenticated(self):
         return bool(self.sudo().microsoft_calendar_rtoken)
