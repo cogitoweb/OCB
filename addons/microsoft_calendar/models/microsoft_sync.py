@@ -201,8 +201,10 @@ class MicrosoftSync(models.AbstractModel):
             record._microsoft_patch(record._get_organizer(), record.ms_organizer_event_id, values)
 
     def _cancel_microsoft(self):
-        self.microsoft_id = False
-        self.unlink()
+
+        if self:
+            self.microsoft_id = False
+            self.unlink()
 
     def _sync_recurrence_microsoft2odoo(self, microsoft_events, new_events=None):
         recurrent_masters = new_events.filter(lambda e: e.is_recurrence()) if new_events else []
