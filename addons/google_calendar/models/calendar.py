@@ -121,7 +121,7 @@ class Meeting(models.Model):
                 attendee_commands += [(1, attendees_by_emails[email].id, {'state': attendee.get('responseStatus')})]
             else:
                 # Create new attendees
-                partner_id = self.env.user.partner_id if attendee.get('self') else self.env['res.partner'].find_or_create(attendee.get('email'))
+                partner_id = self.env.user.partner_id.id if attendee.get('self') else self.env['res.partner'].find_or_create(attendee.get('email'))
                 partner = self.env['res.partner'].browse(partner_id)
                 attendee_commands += [(0, 0, {'state': attendee.get('responseStatus'), 'partner_id': partner.id})]
                 partner_commands += [(4, partner.id)]
