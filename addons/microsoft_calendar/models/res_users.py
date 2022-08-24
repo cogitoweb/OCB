@@ -110,7 +110,7 @@ class User(models.Model):
         for user in users:
             _logger.info("Calendar Synchro - Starting synchronization for %s", user)
             try:
-                user.with_user(user).sudo()._sync_microsoft_calendar()
+                user.with_user(user)._sync_microsoft_calendar()
                 self.env.cr.commit()
             except Exception as e:
                 _logger.exception("[%s] Calendar Synchro - Exception : %s !", user, exception_to_unicode(e))
