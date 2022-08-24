@@ -68,16 +68,20 @@ class Attendee(models.Model):
         return super().unlink()
 
     def _subscribe_partner(self):
-        for event in self.event_id:
-            partners = (event.attendee_ids & self).partner_id - event.message_partner_ids
-            # current user is automatically added as followers, don't add it twice.
-            partners -= self.env.user.partner_id
-            event.message_subscribe(partner_ids=partners.ids)
+
+        for record in self:
+            for event in record.event_id:
+                partners = (event.attendee_ids & record).partner_id - event.message_partner_ids
+                # current user is automatically added as followers, don't add it twice.
+                partners -= record.env.user.partner_id
+                event.message_subscribe(partner_ids=partners.ids)
 
     def _unsubscribe_partner(self):
-        for event in self.event_id:
-            partners = (event.attendee_ids & self).partner_id & event.message_partner_ids
-            event.message_unsubscribe(partner_ids=partners.ids)
+
+        for record in self:
+            for event in self.event_id:
+                partners = (event.attendee_ids & record).partner_id & event.message_partner_ids
+                event.message_unsubscribe(partner_ids=partners.ids)
 
     @api.returns('self', lambda value: value.id)
     def copy(self, default=None):
