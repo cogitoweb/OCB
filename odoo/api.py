@@ -820,7 +820,6 @@ class Environment(Mapping):
         self.registry = Registry(cr.dbname)
         self.cache = envs.cache
         self._cache_key = {}                    # memo {field: cache_key}
-        self._protected = envs.protected        # proxy to shared data structure
         self.all = envs
         envs.add(self)
         return self
