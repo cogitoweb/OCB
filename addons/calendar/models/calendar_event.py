@@ -691,8 +691,10 @@ class Meeting(models.Model):
         if recurrence_update_setting not in ['self_only', 'all_events'] and not break_recurrence:
             detached_events |= self._apply_recurrence_values(recurrence_values, future=recurrence_update_setting == 'future_events')
 
-        (detached_events & self).active = False
-        (detached_events - self).with_context(archive_on_error=True).unlink()
+        if (detached_events & self).ids:
+            (detached_events & self).active = False
+        if (detached_events - self).ids:
+            (detached_events - self).with_context(archive_on_error=True).unlink()
 
         # Notify attendees if there is an alarm on the modified event, or if there was an alarm
         # that has just been removed, as it might have changed their next event notification
