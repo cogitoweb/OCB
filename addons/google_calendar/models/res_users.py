@@ -90,6 +90,8 @@ class User(models.Model):
                 full_sync = True
         self.google_calendar_sync_token = next_sync_token
 
+        _logger.info(events)
+
         # Google -> Odoo
         events.clear_type_ambiguity(self.env)
         recurrences = events.filter(lambda e: e.is_recurrence())
