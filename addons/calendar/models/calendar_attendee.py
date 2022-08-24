@@ -47,7 +47,6 @@ class Attendee(models.Model):
     def create(self, vals_list):
         for values in vals_list:
 
-
             if values.get('partner_id') and not isinstance(values.get('partner_id'), int):
                 values['partner_id'] = values.get('partner_id').id
 
