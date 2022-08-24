@@ -801,9 +801,11 @@ class Environment(Mapping):
         """
         cls._local.environments = Environments()
 
-    def __new__(cls, cr, uid, context):
+    def __new__(cls, cr, uid, context, su=False):
+        if uid == SUPERUSER_ID:
+            su = True
         assert context is not None
-        args = (cr, uid, context)
+        args = (cr, uid, context, su)
 
         # if env already exists, return it
         env, envs = None, cls.envs
@@ -813,12 +815,12 @@ class Environment(Mapping):
 
         # otherwise create environment, and add it in the set
         self = object.__new__(cls)
-        self.cr, self.uid, self.context = self.args = (cr, uid, frozendict(context))
+        args = (cr, uid, frozendict(context), su)
+        self.cr, self.uid, self.context, self.su = self.args = args
         self.registry = Registry(cr.dbname)
         self.cache = envs.cache
-        self._cache_key = (cr, uid)
-        self._protected = StackMap()                # {field: ids, ...}
-        self.dirty = defaultdict(set)               # {record: set(field_name), ...}
+        self._cache_key = {}                    # memo {field: cache_key}
+        self._protected = envs.protected        # proxy to shared data structure
         self.all = envs
         envs.add(self)
         return self
@@ -852,7 +854,7 @@ class Environment(Mapping):
     def __hash__(self):
         return object.__hash__(self)
 
-    def __call__(self, cr=None, user=None, context=None):
+    def __call__(self, cr=None, user=None, context=None, su=None):
         """ Return an environment based on ``self`` with modified parameters.
 
             :param cr: optional database cursor to change the current cursor
@@ -862,7 +864,8 @@ class Environment(Mapping):
         cr = self.cr if cr is None else cr
         uid = self.uid if user is None else int(user)
         context = self.context if context is None else context
-        return Environment(cr, uid, context)
+        su = (user is None and self.su) if su is None else su
+        return Environment(cr, uid, context, su)
 
     def ref(self, xml_id, raise_if_not_found=True):
         """ return the record corresponding to the given ``xml_id`` """
