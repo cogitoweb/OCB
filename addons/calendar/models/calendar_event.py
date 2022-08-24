@@ -339,7 +339,7 @@ class Meeting(models.Model):
         # However, while computing stop, duration is marked to be recomputed. Calling `event.duration` would trigger
         # its recomputation. To avoid this we manually mark the field as computed.
         duration_field = self._fields['duration']
-        self.env.remove_to_compute(duration_field, self)
+        self.env.remove_todo(duration_field, self)
         for event in self:
             # Round the duration (in hours) to the minute to avoid weird situations where the event
             # stops at 4:19:59, later displayed as 4:19.
