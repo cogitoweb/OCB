@@ -100,8 +100,8 @@ class GoogleSync(models.AbstractModel):
         """
         synced = self.filtered('google_id')
         # LUL TODO find a way to get rid of this context key
-        if self.env.context.get('archive_on_error') and self._active_name:
-            synced.write({self._active_name: False})
+        if self.env.context.get('archive_on_error'):
+            synced.write({'active': False})
             self = self - synced
         elif synced:
             # Since we can not delete such an event (see method comment), we archive it.
@@ -121,10 +121,9 @@ class GoogleSync(models.AbstractModel):
     def _sync_odoo2google(self, google_service: GoogleCalendarService):
         if not self:
             return
-        if self._active_name:
-            records_to_sync = self.filtered(self._active_name)
-        else:
-            records_to_sync = self
+
+        records_to_sync = self.filtered('active')
+
         cancelled_records = self - records_to_sync
 
         updated_records = records_to_sync.filtered('google_id')
@@ -215,10 +214,9 @@ class GoogleSync(models.AbstractModel):
         """
         domain = self._get_sync_domain()
         if not full_sync:
-            is_active_clause = (self._active_name, '=', True) if self._active_name else expression.TRUE_LEAF
             domain = expression.AND([domain, [
                 '|',
-                    '&', ('google_id', '=', False), is_active_clause,
+                    '&', ('google_id', '=', False), ('active', '=', True),
                     ('need_sync', '=', True),
             ]])
         return self.with_context(active_test=False).search(domain)
