@@ -233,7 +233,8 @@ class Meeting(models.Model):
         my_cancelled_records = self.filtered(lambda e: e.user_id == user)
         super(Meeting, my_cancelled_records)._cancel()
         attendees = (self - my_cancelled_records).attendee_ids.filtered(lambda a: a.partner_id == user.partner_id)
-        attendees.state = 'declined'
+        if attendees:
+            attendees.state = 'declined'
 
     def _notify_attendees(self):
         # filter events before notifying attendees through calendar_alarm_manager
