@@ -119,6 +119,9 @@ class Attendee(models.Model):
         self._notify_attendees(ics_files, invitation_template, rendering_context, force_send)
 
     def _notify_attendees(self, ics_files, mail_template, rendering_context, force_send):
+
+        return True
+
         for attendee in self:
             if attendee.email and attendee.partner_id != self.env.user.partner_id:
                 # FIXME: is ics_file text or bytes?
