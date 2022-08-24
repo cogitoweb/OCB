@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+import logging
 import pytz
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models, tools, _
 
+_logger = logging.getLogger(__name__)
 
 class Meeting(models.Model):
     _name = 'calendar.event'
@@ -35,6 +37,8 @@ class Meeting(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        _logger.info(vals_list)
+
         return super().create([
             dict(vals, need_sync=False) if vals.get('recurrence_id') or vals.get('recurrency') else vals
             for vals in vals_list
