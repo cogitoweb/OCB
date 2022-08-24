@@ -426,7 +426,20 @@ class GettextAlias(object):
                     lang = env['res.users'].context_get()['lang']
         return lang
 
-    def __call__(self, source):
+    def __call__(self, source, *args, **kwargs):
+        translation = self._get_translation(source)
+        assert not (args and kwargs)
+        if args or kwargs:
+            try:
+                return translation % (args or kwargs)
+            except (TypeError, ValueError, KeyError):
+                bad = translation
+                # fallback: apply to source before logging exception (in case source fails)
+                translation = source % (args or kwargs)
+                _logger.exception('Bad translation %r for string %r', bad, source)
+        return translation
+
+    def _get_translation(self, source):
         res = source
         cr = None
         is_new_cr = False
@@ -437,13 +450,16 @@ class GettextAlias(object):
             frame = frame.f_back
             if not frame:
                 return source
+            frame = frame.f_back
+            if not frame:
+                return source
             lang = self._get_lang(frame)
             if lang:
                 cr, is_new_cr = self._get_cr(frame)
                 if cr:
                     # Try to use ir.translation to benefit from global cache if possible
                     env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {})
-                    res = env['ir.translation']._get_source(None, ('code','sql_constraint'), lang, source)
+                    res = env['ir.translation']._get_source(None, ('code',), lang, source)
                 else:
                     _logger.debug('no context cursor detected, skipping translation for "%r"', source)
             else:
@@ -454,7 +470,7 @@ class GettextAlias(object):
         finally:
             if cr and is_new_cr:
                 cr.close()
-        return res
+        return res or ''
 
 _ = GettextAlias()
 
