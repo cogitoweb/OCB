@@ -4815,6 +4815,17 @@ class BaseModel(MetaModel('DummyModel', (object,), {'_register': False})):
         """
         return self.with_env(self.env(user=user))
 
+    def with_user(self, user):
+        """ with_user(user)
+
+        Return a new version of this recordset attached to the given user, in
+        non-superuser mode, unless `user` is the superuser (by convention, the
+        superuser is always in superuser mode.)
+        """
+        if not user:
+            return self
+        return self.with_env(self.env(user=user))
+
     def with_context(self, *args, **kwargs):
         """ with_context([context][, **overrides]) -> records
 
