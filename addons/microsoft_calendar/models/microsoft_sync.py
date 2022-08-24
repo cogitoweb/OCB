@@ -394,7 +394,7 @@ class MicrosoftSync(models.AbstractModel):
         'self' won't exist when this method will be really called due to @after_commit decorator.
         """
         microsoft_service = self._get_microsoft_service()
-        with microsoft_calendar_token(self._impersonate_user(user_id).sudo()) as token:
+        with microsoft_calendar_token(self._impersonate_user(user_id)) as token:
             if token:
                 microsoft_service.delete(event_id, token=token, timeout=timeout)
 
@@ -408,7 +408,7 @@ class MicrosoftSync(models.AbstractModel):
         due to @after_commit decorator.
         """
         microsoft_service = self._get_microsoft_service()
-        with microsoft_calendar_token(self._impersonate_user(user_id).sudo()) as token:
+        with microsoft_calendar_token(self._impersonate_user(user_id)) as token:
             if token:
                 self._ensure_attendees_have_email()
                 res = microsoft_service.patch(event_id, values, token=token, timeout=timeout)
