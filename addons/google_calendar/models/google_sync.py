@@ -137,8 +137,10 @@ class GoogleSync(models.AbstractModel):
             record._google_patch(google_service, record.google_id, record._google_values())
 
     def _cancel(self):
-        self.google_id = False
-        self.unlink()
+
+        if self:
+            self.google_id = False
+            self.unlink()
 
     @api.model
     def _sync_google2odoo(self, google_events: GoogleEvent, default_reminders=()):
