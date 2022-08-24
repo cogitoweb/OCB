@@ -485,6 +485,9 @@ class Meeting(models.Model):
 
         removed_partner_ids = []
         added_partner_ids = []
+
+        _logger.info(partner_commands)
+
         for command in partner_commands:
             op = command[0]
             if op in (2, 3):  # Remove partner
