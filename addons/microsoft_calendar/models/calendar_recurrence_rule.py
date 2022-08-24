@@ -50,7 +50,9 @@ class RecurrenceRule(models.Model):
                 event._microsoft_delete(event.user_id, event.ms_organizer_event_id)
                 event.ms_universal_event_id = False
         self.env['calendar.event'].create(vals)
-        self.calendar_event_ids.need_sync_m = False
+
+        if self.calendar_event_ids:
+            self.calendar_event_ids.need_sync_m = False
         return detached_events
 
     def _write_events(self, values, dtstart=None):
