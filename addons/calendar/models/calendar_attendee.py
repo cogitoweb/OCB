@@ -47,6 +47,9 @@ class Attendee(models.Model):
     def create(self, vals_list):
         for values in vals_list:
 
+            if values.get('partner_id') and not isinstance(values.get('partner_id'), int):
+                values['partner_id'] = values.get('partner_id').id
+
             # by default, if no state is given for the attendee corresponding to the current user
             # that means he's the event organizer so we can set his state to "accepted"
             if 'state' not in values and values.get('partner_id') == self.env.user.partner_id.id:
