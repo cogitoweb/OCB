@@ -175,10 +175,7 @@ class MicrosoftSync(models.AbstractModel):
     def _sync_odoo2microsoft(self):
         if not self:
             return
-        if self._active_name:
-            records_to_sync = self.filtered(self._active_name)
-        else:
-            records_to_sync = self
+        records_to_sync = self.filtered('active')
         cancelled_records = self - records_to_sync
 
         records_to_sync._ensure_attendees_have_email()
@@ -462,10 +459,9 @@ class MicrosoftSync(models.AbstractModel):
         """
         domain = self._get_microsoft_sync_domain()
         if not full_sync:
-            is_active_clause = (self._active_name, '=', True) if self._active_name else expression.TRUE_LEAF
             domain = expression.AND([domain, [
                 '|',
-                '&', ('ms_universal_event_id', '=', False), is_active_clause,
+                '&', ('ms_universal_event_id', '=', False), ('active', '=', True),
                 ('need_sync_m', '=', True),
             ]])
         return self.with_context(active_test=False).search(domain)
