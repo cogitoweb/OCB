@@ -41,7 +41,8 @@ class RecurrenceRule(models.Model):
                 event.google_id = False
         self.env['calendar.event'].create(vals)
 
-        self.calendar_event_ids.need_sync = False
+        if self.calendar_event_ids:
+            self.calendar_event_ids.need_sync = False
         return detached_events
 
     def _get_event_google_id(self, event):
