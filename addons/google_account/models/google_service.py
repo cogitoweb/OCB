@@ -170,7 +170,7 @@ class GoogleService(models.AbstractModel):
         if headers is None:
             headers = {}
 
-        _logger.debug("Uri: %s - Type : %s - Headers: %s - Params : %s !", (uri, method, headers, params))
+        _logger.info("Uri: %s - Type : %s - Headers: %s - Params : %s !", (uri, method, headers, params))
 
         ask_time = fields.Datetime.now()
         try:
