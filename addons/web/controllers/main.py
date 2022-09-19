@@ -1749,6 +1749,9 @@ class ReportController(http.Controller):
                     if report.print_report_name and not len(obj) > 1:
                         report_name = safe_eval(report.print_report_name, {'object': obj, 'time': time})
                         filename = "%s.%s" % (report_name, extension)
+                
+                # add remove Content-Disposition -> Cgt
+                response.headers.remove('Content-Disposition')
                 response.headers.add('Content-Disposition', content_disposition(filename))
                 response.set_cookie('fileToken', token)
                 return response
