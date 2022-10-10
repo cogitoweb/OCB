@@ -993,7 +993,7 @@ class WorkerHTTP(Worker):
         # latencies & b/w saturation. This timeout is also essential to protect against accidental
         # DoS due to idle HTTP connections.
         sock_timeout = os.environ.get("ODOO_HTTP_SOCKET_TIMEOUT")
-        self.sock_timeout = float(sock_timeout) if sock_timeout else 2
+        self.sock_timeout = float(sock_timeout) if sock_timeout else 30
 
     def process_request(self, client, addr):
         client.setblocking(1)
