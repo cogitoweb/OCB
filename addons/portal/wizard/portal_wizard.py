@@ -184,7 +184,7 @@ class PortalWizardUser(models.TransientModel):
             raise UserError(_('You must have an email address in your User Preferences to send emails.'))
 
         # determine subject and body in the portal user's language
-        template = self.env.ref('portal.mail_template_data_portal_welcome')
+        template = self._get_welcome_template()
         for wizard_line in self:
             lang = wizard_line.user_id.lang
             partner = wizard_line.user_id.partner_id
@@ -198,3 +198,7 @@ class PortalWizardUser(models.TransientModel):
                 _logger.warning("No email template found for sending email to the portal user")
 
         return True
+
+    @api.multi
+    def _get_welcome_template(self):
+        return self.env.ref('portal.mail_template_data_portal_welcome')
