@@ -199,11 +199,11 @@ class Meeting(models.Model):
         Attendee.STATE_SELECTION, string='Attendee Status', compute='_compute_attendee')
     display_time = fields.Char('Event Time', compute='_compute_display_time')
     start = fields.Datetime(
-        'Start', required=True, tracking=True, default=fields.Date.today,
+        'Start', required=True, tracking=True, default=fields.Datetime.today,
         help="Start date of an event, without time for full days events")
     stop = fields.Datetime(
         'Stop', required=True, tracking=True, default=lambda self: fields.Datetime.today() + timedelta(hours=1),
-        compute='_compute_stop', readonly=False, store=True,
+        compute=False, readonly=False, store=True,
         help="Stop date of an event, without time for full days events")
 
     allday = fields.Boolean('All Day', default=False)
@@ -213,7 +213,7 @@ class Meeting(models.Model):
     stop_date = fields.Date(
         'End Date', store=True, tracking=True,
         compute='_compute_dates', inverse='_inverse_dates')
-    duration = fields.Float('Duration', compute='_compute_duration', store=True, readonly=False)
+    duration = fields.Float('Duration', compute='_compute_duration', store=True, readonly=True)
     description = fields.Text('Description')
     privacy = fields.Selection(
         [('public', 'Everyone'),
@@ -233,7 +233,7 @@ class Meeting(models.Model):
         'Document Model Name', related='res_model_id.model', readonly=True, store=True)
     activity_ids = fields.One2many('mail.activity', 'calendar_event_id', string='Activities')
 
-    #redifine message_ids to remove autojoin to avoid search to crash in get_recurrent_ids
+    # redifine message_ids to remove autojoin to avoid search to crash in get_recurrent_ids
     message_ids = fields.One2many(auto_join=False)
 
     user_id = fields.Many2one('res.users', 'Responsible', default=lambda self: self.env.user)
@@ -259,7 +259,7 @@ class Meeting(models.Model):
     recurrency = fields.Boolean('Recurrent', help="Recurrent Event")
     recurrence_id = fields.Many2one(
         'calendar.recurrence', string="Recurrence Rule", index=True)
-    follow_recurrence = fields.Boolean(default=False) # Indicates if an event follows the recurrence, i.e. is not an exception
+    follow_recurrence = fields.Boolean(default=False)  # Indicates if an event follows the recurrence, i.e. is not an exception
     recurrence_update = fields.Selection([
         ('self_only', "This event"),
         ('future_events', "This and following events"),
@@ -329,23 +329,23 @@ class Meeting(models.Model):
         for event in self.with_context(dont_notify=True):
             event.duration = self._get_duration(event.start, event.stop)
 
-    @api.depends('start', 'duration')
-    def _compute_stop(self):
-        # stop and duration fields both depends on the start field.
-        # But they also depends on each other.
-        # When start is updated, we want to update the stop datetime based on
-        # the *current* duration. In other words, we want: change start => keep the duration fixed and
-        # recompute stop accordingly.
-        # However, while computing stop, duration is marked to be recomputed. Calling `event.duration` would trigger
-        # its recomputation. To avoid this we manually mark the field as computed.
-        duration_field = self._fields['duration']
-        self.env.remove_todo(duration_field, self)
-        for event in self:
-            # Round the duration (in hours) to the minute to avoid weird situations where the event
-            # stops at 4:19:59, later displayed as 4:19.
-            event.stop = event.start and event.start + timedelta(minutes=round((event.duration or 1.0) * 60))
-            if event.allday:
-                event.stop -= timedelta(seconds=1)
+    # @api.depends('start', 'duration')
+    # def _compute_stop(self):
+    #     # stop and duration fields both depends on the start field.
+    #     # But they also depends on each other.
+    #     # When start is updated, we want to update the stop datetime based on
+    #     # the *current* duration. In other words, we want: change start => keep the duration fixed and
+    #     # recompute stop accordingly.
+    #     # However, while computing stop, duration is marked to be recomputed. Calling `event.duration` would trigger
+    #     # its recomputation. To avoid this we manually mark the field as computed.
+    #     duration_field = self._fields['duration']
+    #     self.env.remove_todo(duration_field, self)
+    #     for event in self:
+    #         # Round the duration (in hours) to the minute to avoid weird situations where the event
+    #         # stops at 4:19:59, later displayed as 4:19.
+    #         event.stop = event.start and event.start + timedelta(minutes=round((event.duration or 1.0) * 60))
+    #         if event.allday:
+    #             event.stop -= timedelta(seconds=1)
 
     def _inverse_dates(self):
         """ This method is used to set the start and stop values of all day events.
@@ -831,7 +831,7 @@ class Meeting(models.Model):
         shown_names = super(Meeting, shown).name_get()
         obfuscated_names = [(eid, _('Busy')) for eid in hidden.ids]
         return shown_names + obfuscated_names
-    
+
     @api.model
     def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
         groupby = [groupby] if isinstance(groupby, str) else groupby
