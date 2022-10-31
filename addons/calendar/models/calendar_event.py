@@ -326,7 +326,7 @@ class Meeting(models.Model):
 
     @api.depends('stop', 'start')
     def _compute_duration(self):
-        for event in self.with_context(dont_notify=True):
+        for event in self:
             event.duration = self._get_duration(event.start, event.stop)
 
     # @api.depends('start', 'duration')
