@@ -14,6 +14,7 @@ from odoo.addons.google_account.models.google_service import TIMEOUT
 
 _logger = logging.getLogger(__name__)
 
+
 def requires_auth_token(func):
     def wrapped(self, *args, **kwargs):
         if not kwargs.get('token'):
@@ -21,8 +22,10 @@ def requires_auth_token(func):
         return func(self, *args, **kwargs)
     return wrapped
 
+
 class InvalidSyncToken(Exception):
     pass
+
 
 class GoogleCalendarService():
 
@@ -30,8 +33,9 @@ class GoogleCalendarService():
         self.google_service = google_service
 
     @requires_auth_token
-    def get_events(self, sync_token=None, token=None, timeout=TIMEOUT):
-        url = "/calendar/v3/calendars/primary/events"
+    def get_events(self, sync_token=None, token=None, cal_id=None, timeout=TIMEOUT):
+        cal_id = cal_id or 'primary'
+        url = "/calendar/v3/calendars/{0}/events".format(cal_id)
         headers = {'Content-type': 'application/json'}
         params = {'access_token': token}
         if sync_token:
@@ -57,8 +61,9 @@ class GoogleCalendarService():
         return GoogleEvent(events), next_sync_token, default_reminders
 
     @requires_auth_token
-    def insert(self, values, token=None, timeout=TIMEOUT):
-        url = "/calendar/v3/calendars/primary/events?sendUpdates=all"
+    def insert(self, values, token=None, cal_id=None, timeout=TIMEOUT):
+        cal_id = cal_id or 'primary'
+        url = "/calendar/v3/calendars/{0}/events?sendUpdates=all".format(cal_id)
         headers = {'Content-type': 'application/json', 'Authorization': 'Bearer %s' % token}
         if not values.get('id'):
             values['id'] = uuid4().hex
@@ -66,14 +71,16 @@ class GoogleCalendarService():
         return values['id']
 
     @requires_auth_token
-    def patch(self, event_id, values, token=None, timeout=TIMEOUT):
-        url = "/calendar/v3/calendars/primary/events/%s?sendUpdates=all" % event_id
+    def patch(self, event_id, values, token=None, cal_id=None, timeout=TIMEOUT):
+        cal_id = cal_id or 'primary'
+        url = "/calendar/v3/calendars/{0}/events/{1}?sendUpdates=all".format(cal_id, event_id)
         headers = {'Content-type': 'application/json', 'Authorization': 'Bearer %s' % token}
         self.google_service._do_request(url, json.dumps(values), headers, method='PATCH', timeout=timeout)
 
     @requires_auth_token
-    def delete(self, event_id, token=None, timeout=TIMEOUT):
-        url = "/calendar/v3/calendars/primary/events/%s?sendUpdates=all" % event_id
+    def delete(self, event_id, token=None, cal_id=None, timeout=TIMEOUT):
+        cal_id = cal_id or 'primary'
+        url = "/calendar/v3/calendars/{0}/events/{1}?sendUpdates=all".format(cal_id, event_id)
         headers = {'Content-type': 'application/json'}
         params = {'access_token': token}
         try:
