@@ -363,7 +363,7 @@ class Meeting(models.Model):
                 # i.e. Christmas is on 25/12 for everyone
                 # even if people don't celebrate it simultaneously
                 enddate = fields.Datetime.from_string(meeting.stop_date)
-                enddate = enddate.replace(hour=18)
+                enddate = enddate.replace(hour=17)
 
                 startdate = fields.Datetime.from_string(meeting.start_date)
                 startdate = startdate.replace(hour=8)  # Set 8 AM

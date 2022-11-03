@@ -45,6 +45,7 @@ def after_commit(func):
 
     return wrapped
 
+
 @contextmanager
 def google_calendar_token(user):
     try:
@@ -59,6 +60,7 @@ def google_calendar_token(user):
                 env = user.env(cr=cr)
                 user.with_env(env)._set_auth_tokens(False, False, 0)
         raise e
+
 
 class GoogleSync(models.AbstractModel):
     _name = 'google.calendar.sync'
@@ -124,7 +126,6 @@ class GoogleSync(models.AbstractModel):
             return
 
         records_to_sync = self.filtered('active')
-
         cancelled_records = self - records_to_sync
 
         updated_records = records_to_sync.filtered('google_id')
@@ -137,7 +138,6 @@ class GoogleSync(models.AbstractModel):
             record._google_patch(google_service, record.google_id, record._google_values())
 
     def _cancel(self):
-
         if self:
             self.google_id = False
             self.unlink()
