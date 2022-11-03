@@ -247,7 +247,7 @@ class Meeting(models.Model):
         partners_ids = []
 
         for n in need_notifs:
-            partners_ids += n.partner_ids
+            partners_ids += n.partner_ids.ids
 
         if partners_ids:
             self.env['calendar.alarm_manager']._notify_next_alarm(partners_ids)
