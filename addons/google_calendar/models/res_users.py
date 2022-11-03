@@ -84,9 +84,9 @@ class User(models.Model):
         full_sync = not bool(self.google_calendar_sync_token)
         with google_calendar_token(self) as token:
             try:
-                events, next_sync_token, default_reminders = calendar_service.get_events(self.google_calendar_sync_token, token=token)
+                events, next_sync_token, default_reminders = calendar_service.get_events(self.google_calendar_sync_token, token=token, cal_id=self.google_calendar_cal_id)
             except InvalidSyncToken:
-                events, next_sync_token, default_reminders = calendar_service.get_events(token=token)
+                events, next_sync_token, default_reminders = calendar_service.get_events(token=token, cal_id=self.google_calendar_cal_id)
                 full_sync = True
         self.google_calendar_sync_token = next_sync_token
 
