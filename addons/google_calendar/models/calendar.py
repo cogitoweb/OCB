@@ -3,6 +3,7 @@
 
 import logging
 import pytz
+
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
@@ -10,19 +11,20 @@ from odoo import api, fields, models, tools, _
 
 _logger = logging.getLogger(__name__)
 
+
 class Meeting(models.Model):
     _name = 'calendar.event'
     _inherit = ['calendar.event', 'google.calendar.sync']
 
     google_id = fields.Char(
-        'Google Calendar Event Id', compute='_compute_google_id', store=True, readonly=False)
+        'Google Calendar Event Id', compute=False, store=True, readonly=False)
 
     @api.depends('recurrence_id.google_id')
     def _compute_google_id(self):
         # google ids of recurring events are built from the recurrence id and the
         # original starting time in the recurrence.
         # The `start` field does not appear in the dependencies on purpose!
-        # Event if the event is moved, the google_id remains the same.
+        # Even if the event is moved, the google_id remains the same.
         for event in self:
             google_recurrence_id = event.recurrence_id._get_event_google_id(event)
             if not event.google_id and google_recurrence_id:
@@ -37,8 +39,6 @@ class Meeting(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        _logger.info(vals_list)
-
         return super().create([
             dict(vals, need_sync=False) if vals.get('recurrence_id') or vals.get('recurrency') else vals
             for vals in vals_list
@@ -83,6 +83,7 @@ class Meeting(models.Model):
 
         if not google_event.is_recurrence():
             values['google_id'] = google_event.id
+
         if google_event.start.get('dateTime'):
             # starting from python3.7, use the new [datetime, date].fromisoformat method
             start = parse(google_event.start.get('dateTime')).astimezone(pytz.utc).replace(tzinfo=None)
