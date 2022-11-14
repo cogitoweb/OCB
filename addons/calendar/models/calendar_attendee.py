@@ -30,7 +30,7 @@ class Attendee(models.Model):
         'calendar.event', 'Meeting linked', required=True, ondelete='cascade')
     partner_id = fields.Many2one('res.partner', 'Contact', required=True, readonly=True)
     state = fields.Selection(STATE_SELECTION, string='Status', readonly=True, default='needsAction',
-                             help="Status of the attendee's participation")
+        required=True, help="Status of the attendee's participation")
     common_name = fields.Char('Common name', compute='_compute_common_name', store=True)
     email = fields.Char('Email', related='partner_id.email', help="Email of Invited Person")
     availability = fields.Selection(
