@@ -68,7 +68,6 @@ class Attendee(models.Model):
         return super().unlink()
 
     def _subscribe_partner(self):
-
         for record in self:
             for event in record.event_id:
                 partners = (event.attendee_ids & record).partner_id - event.message_partner_ids
@@ -77,7 +76,6 @@ class Attendee(models.Model):
                 event.message_subscribe(partner_ids=partners.ids)
 
     def _unsubscribe_partner(self):
-
         for record in self:
             for event in self.event_id:
                 partners = (event.attendee_ids & record).partner_id & event.message_partner_ids
@@ -119,7 +117,6 @@ class Attendee(models.Model):
         self._notify_attendees(ics_files, invitation_template, rendering_context, force_send)
 
     def _notify_attendees(self, ics_files, mail_template, rendering_context, force_send):
-
         return True
 
         for attendee in self:
