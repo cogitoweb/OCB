@@ -48,7 +48,7 @@ class Meeting(models.Model):
         recurrence_update_setting = values.get('recurrence_update')
         if recurrence_update_setting in ('all_events', 'future_events') and len(self) == 1:
             values = dict(values, need_sync=False)
-        res = super().write(values)
+        res = super(Meeting, self).write(values)
         if recurrence_update_setting in ('all_events',) and len(self) == 1 and values.keys() & self._get_google_synced_fields():
             self.recurrence_id.need_sync = True
         return res
@@ -124,7 +124,7 @@ class Meeting(models.Model):
                 # Create new attendees
                 partner_id = self.env.user.partner_id.id if attendee.get('self') else self.env['res.partner'].find_or_create(attendee.get('email'))
                 partner = self.env['res.partner'].browse(partner_id)
-                attendee_commands += [(0, 0, {'state': attendee.get('responseStatus'), 'partner_id': partner.id})]
+                attendee_commands += [(0, 0, {'state': attendee.get('responseStatus', 'needsAction'), 'partner_id': partner.id})]
                 partner_commands += [(4, partner.id)]
                 if attendee.get('displayName') and not partner.name:
                     partner.name = attendee.get('displayName')
@@ -239,7 +239,7 @@ class Meeting(models.Model):
         super(Meeting, my_cancelled_records)._cancel()
         attendees = (self - my_cancelled_records).attendee_ids.filtered(lambda a: a.partner_id == user.partner_id)
         if attendees:
-            attendees.state = 'declined'
+            attendees.write({'state': 'declined'})
 
     def _notify_attendees(self):
         # filter events before notifying attendees through calendar_alarm_manager

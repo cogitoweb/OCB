@@ -139,7 +139,7 @@ class GoogleSync(models.AbstractModel):
 
     def _cancel(self):
         if self:
-            self.google_id = False
+            self.write({'google_id': False})
             self.unlink()
 
     @api.model

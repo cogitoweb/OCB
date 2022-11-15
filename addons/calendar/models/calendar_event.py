@@ -672,7 +672,7 @@ class Meeting(models.Model):
             if any({field: values.get(field) for field in time_fields if field in values}):
                 values['follow_recurrence'] = False
 
-        previous_attendees = self.attendee_ids
+        previous_attendees = self.mapped('attendee_ids')
 
         recurrence_values = {field: values.pop(field) for field in self._get_recurrent_fields() if field in values}
         if update_recurrence:
@@ -695,7 +695,7 @@ class Meeting(models.Model):
             detached_events |= self._apply_recurrence_values(recurrence_values, future=recurrence_update_setting == 'future_events')
 
         if (detached_events & self).ids:
-            (detached_events & self).active = False
+            (detached_events & self).write({'active': False})
         if (detached_events - self).ids:
             (detached_events - self).with_context(archive_on_error=True).unlink()
 
@@ -724,7 +724,7 @@ class Meeting(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         vals_list = [  # Else bug with quick_create when we are filter on an other user
-            dict(vals, user_id=self.env.user.id) if not 'user_id' in vals else vals
+            dict(vals, user_id=self.env.user.id) if 'user_id' not in vals else vals
             for vals in vals_list
         ]
 
