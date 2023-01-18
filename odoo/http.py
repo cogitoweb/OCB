@@ -1251,6 +1251,11 @@ class Response(werkzeug.wrappers.Response):
                 methods = ', '.join(request.endpoint.routing['methods'])
             self.headers.set('Access-Control-Allow-Methods', methods)
 
+            # Always allow requested headers
+            allow_headers = request.httprequest.headers.get('Access-Control-Request-Headers', None)
+            if allow_headers:
+                self.headers.set('Access-Control-Allow-Headers', allow_headers)
+
     @property
     def is_qweb(self):
         return self.template is not None
