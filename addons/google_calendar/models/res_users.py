@@ -23,10 +23,12 @@ class User(models.Model):
     google_calendar_token_validity = fields.Datetime('Token Validity', copy=False)
     google_calendar_sync_token = fields.Char('Next Sync Token', copy=False)
     google_calendar_cal_id = fields.Char('Calendar ID', copy=False, help='Last Calendar ID who has been synchronized. If it is changed, we remove all links between GoogleID and Odoo Google Internal ID')
-    # google_calendar_last_sync_date = fields.Datetime()
+    google_calendar_last_sync_date = fields.Datetime()
 
     def _set_auth_tokens(self, access_token, refresh_token, ttl):
-        self.write({
+        # _logger.info(">>> ACCESS_TOKEN:%s \n, rtoken: %s \n, ttl: %s\n<<<" % (access_token, refresh_token, ttl))
+        _logger.info(">>> self: %s <<<", self)
+        self.sudo().write({
             'google_calendar_rtoken': refresh_token,
             'google_calendar_token': access_token,
             'google_calendar_token_validity': fields.Datetime.now() + timedelta(seconds=ttl) if ttl else False,
@@ -79,6 +81,7 @@ class User(models.Model):
             error_msg = _("Something went wrong during your token generation. Maybe your Authorization Code is invalid or already expired [%s]", error_key)
             raise UserError(error_msg)
 
+    # qui è il cuoree
     def _sync_google_calendar(self, calendar_service: GoogleCalendarService):
         self.ensure_one()
         full_sync = not bool(self.google_calendar_sync_token)
@@ -105,6 +108,7 @@ class User(models.Model):
         synced_events |= recurrences.calendar_event_ids - recurrences._get_outliers()
         synced_events |= synced_recurrences.calendar_event_ids - synced_recurrences._get_outliers()
         events = self.env['calendar.event']._get_records_to_sync(full_sync=full_sync)
+
         (events - synced_events)._sync_odoo2google(calendar_service)
 
         return bool(events | synced_events) or bool(recurrences | synced_recurrences)
@@ -118,5 +122,7 @@ class User(models.Model):
             _logger.info("Calendar Synchro - Starting synchronization for %s", user)
             try:
                 user.with_user(user)._sync_google_calendar(google)
+                self.env.cr.commit()
             except Exception as e:
                 _logger.exception("[%s] Calendar Synchro - Exception : %s !", user, exception_to_unicode(e))
+                self.env.cr.rollback()
