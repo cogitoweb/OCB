@@ -55,10 +55,11 @@ def google_calendar_token(user):
             # The transaction should be rolledback, but the user's tokens
             # should be reset. The user will be asked to authenticate again next time.
             # Rollback manually first to avoid concurrent access errors/deadlocks.
+            _logger.info(">>>invalid token?? <<")
             user.env.cr.rollback()
             with user.pool.cursor() as cr:
                 env = user.env(cr=cr)
-                user.with_env(env)._set_auth_tokens(False, False, 0)
+                # user.with_env(env)._set_auth_tokens(False, False, 0)
         raise e
 
 
@@ -73,7 +74,7 @@ class GoogleSync(models.AbstractModel):
     def write(self, vals):
         google_service = GoogleCalendarService(self.env['google.service'])
         if 'google_id' in vals:
-            self._from_google_ids.clear_cache(self)
+            self.event_ids_from_google_ids.clear_cache(self)
         synced_fields = self._get_google_synced_fields()
         if 'need_sync' not in vals and vals.keys() & synced_fields:
             vals['need_sync'] = True
@@ -88,7 +89,7 @@ class GoogleSync(models.AbstractModel):
     @api.model_create_multi
     def create(self, vals_list):
         if any(vals.get('google_id') for vals in vals_list):
-            self._from_google_ids.clear_cache(self)
+            self.event_ids_from_google_ids.clear_cache(self)
         records = super().create(vals_list)
 
         google_service = GoogleCalendarService(self.env['google.service'])
@@ -119,17 +120,27 @@ class GoogleSync(models.AbstractModel):
     def _from_google_ids(self, google_ids):
         if not google_ids:
             return self.browse()
-        return self.search([('google_id', 'in', google_ids)])
+        return self.browse(self._event_ids_from_google_ids(google_ids))
+
+    @api.model
+    @ormcache_context('google_ids', keys=('active_test',))
+    def _event_ids_from_google_ids(self, google_ids):
+        return self.search([('google_id', 'in', google_ids)]).ids
 
     def _sync_odoo2google(self, google_service: GoogleCalendarService):
         if not self:
             return
+    
+        _logger.info(">> _sync_odoo2google: <<")
 
         records_to_sync = self.filtered('active')
         cancelled_records = self - records_to_sync
 
         updated_records = records_to_sync.filtered('google_id')
         new_records = records_to_sync - updated_records
+        
+        _logger.info(">> new_records: %s <<", new_records)
+
         for record in cancelled_records.filtered('google_id'):
             record._google_delete(google_service, record.google_id)
         for record in new_records:
@@ -157,6 +168,9 @@ class GoogleSync(models.AbstractModel):
             dict(self._odoo_values(e, default_reminders), need_sync=False)
             for e in new
         ]
+        
+        _logger.info(">> odoo_values: %s <<", odoo_values)
+
         new_odoo = self.with_context(dont_notify=True)._create_from_google(new, odoo_values)
         # Synced recurrences attendees will be notified once _apply_recurrence is called.
         if not self._context.get("dont_notify") and all(not e.is_recurrence() for e in google_events):
@@ -192,6 +206,7 @@ class GoogleSync(models.AbstractModel):
     def _google_patch(self, google_service: GoogleCalendarService, google_id, values, timeout=TIMEOUT):
         with google_calendar_token(self.env.user.sudo()) as token:
             if token:
+                _logger.info(">> token: %s <<", token)
                 google_service.patch(google_id, values, token=token, timeout=timeout)
                 self.need_sync = False
 
@@ -200,8 +215,11 @@ class GoogleSync(models.AbstractModel):
         if not values:
             return
         with google_calendar_token(self.env.user.sudo()) as token:
+            _logger.info(">> token: %s <<", token)
             if token:
                 google_id = google_service.insert(values, token=token, timeout=timeout)
+                _logger.info(">> google_id: %s <<", google_id)
+                
                 self.write({
                     'google_id': google_id,
                     'need_sync': False,
@@ -215,11 +233,14 @@ class GoogleSync(models.AbstractModel):
         """
         domain = self._get_sync_domain()
         if not full_sync:
-            domain = expression.AND([domain, [
-                '|',
-                    '&', ('google_id', '=', False), ('active', '=', True),
-                    ('need_sync', '=', True),
-            ]])
+            # expression.AND([domain,
+            #[TODO]
+            domain = [
+                ('google_id', '=', False),
+                ('active', '=', True),
+                ('need_sync', '=', True),
+                ('create_date', '>', '2023-02-22 00:00:00')
+            ]
         return self.with_context(active_test=False).search(domain)
 
     def _write_from_google(self, gevent, vals):
