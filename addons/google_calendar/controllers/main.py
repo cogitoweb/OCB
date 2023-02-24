@@ -4,6 +4,8 @@
 from odoo import http
 from odoo.http import request
 from odoo.addons.google_calendar.utils.google_calendar import GoogleCalendarService
+import logging
+_logger = logging.getLogger(__name__)
 
 
 class GoogleCalendarController(http.Controller):
@@ -41,7 +43,8 @@ class GoogleCalendarController(http.Controller):
                     "url": url
                 }
             # If App authorized, and user access accepted, We launch the synchronization
-            need_refresh = request.env.user.sudo()._sync_google_calendar(GoogleCal)
+            # for use the correct user in _sync_google_calendar force the sudo
+            need_refresh = request.env.user.sudo(request.env.user)._sync_google_calendar(GoogleCal)
             return {
                 "status": "need_refresh" if need_refresh else "no_new_event_from_google",
                 "url": ''
