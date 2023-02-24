@@ -78,7 +78,7 @@ class GoogleService(models.AbstractModel):
         }
 
         get_param = self.env['ir.config_parameter'].sudo().get_param
-        base_url = get_param('web.base.url', default='http://www.odoo.com?NoBaseUrl')
+        base_url = self._context.get('base_url') or self.env.user.get_base_url()
         client_id = get_param('google_%s_client_id' % (service,), default=False)
 
         encoded_params = urls.url_encode({
@@ -112,6 +112,7 @@ class GoogleService(models.AbstractModel):
         }
         try:
             dummy, response, dummy = self._do_request(GOOGLE_TOKEN_ENDPOINT, params=data, headers=headers, method='POST', preuri='')
+            _logger.info(">>> response: %s <<<", response)
             access_token = response.get('access_token')
             refresh_token = response.get('refresh_token')
             ttl = response.get('expires_in')
