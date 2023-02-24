@@ -200,8 +200,11 @@ class Meeting(models.Model):
             'description': self.description or '',
             'location': self.location or '',
             'guestsCanModify': True,
-            'organizer': {'email': self.user_id.email, 'self': self.user_id == self.env.user},
-            'attendees': [{'email': attendee.email, 'responseStatus': attendee.state} for attendee in attendee_ids],
+            'organizer': {'email': self.user_id.google_calendar_cal_id, 'self': self.user_id.id == self.env.user.id},
+            'attendees': [{
+                'email': attendee.email,
+                'responseStatus': attendee.state or 'needsAction',
+            } for attendee in self.attendee_ids if attendee.email],
             'extendedProperties': {
                 'shared': {
                     '%s_odoo_id' % self.env.cr.dbname: self.id,
