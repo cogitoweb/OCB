@@ -33,11 +33,14 @@ class GoogleCalendarService():
         self.google_service = google_service
 
     @requires_auth_token
-    def get_events(self, sync_token=None, token=None, cal_id=None, timeout=TIMEOUT):
+    def get_events(self, sync_token=None, token=None, cal_id=None, timeout=TIMEOUT, info_dict=False):
         cal_id = cal_id or 'primary'
         url = "/calendar/v3/calendars/{0}/events".format(cal_id)
         headers = {'Content-type': 'application/json'}
         params = {'access_token': token}
+        if info_dict:
+            params.update(info_dict)
+
         if sync_token:
             params['syncToken'] = sync_token
         try:

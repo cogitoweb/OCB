@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
-
+import logging
 import json
 from werkzeug.utils import redirect
 
 from odoo import http, registry
 from odoo.http import request
+_logger = logging.getLogger(__name__)
 
 
 class GoogleAuth(http.Controller):
@@ -22,7 +23,11 @@ class GoogleAuth(http.Controller):
             if kw.get('code'):
                 access_token, refresh_token, ttl = request.env['google.service']._get_google_tokens(kw['code'], service)
                 # LUL TODO only defined in google_calendar
-                request.env.user._set_auth_tokens(access_token, refresh_token, ttl)
+                # non puo funzionare l'utente che fa la richiesta è google uno public user
+                # _logger.info(">>> kw: %s<<", kw)
+                admin = request.env['res.users'].sudo().search([('id', '=', 21)])
+                # _logger.info(">>> admin: %s<<", admin)
+                admin._set_auth_tokens(access_token, refresh_token, ttl)
                 return redirect(url_return)
             elif kw.get('error'):
                 return redirect("%s%s%s" % (url_return, "?error=", kw['error']))

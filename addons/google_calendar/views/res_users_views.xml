@@ -13,7 +13,7 @@
                             <field name="google_calendar_token" readonly="1"/>
                             <field name="google_calendar_token_validity" readonly="1"/>
                             <field name="google_calendar_sync_token" readonly="1"/>
-                            <field name="google_calendar_cal_id" readonly="1"/>
+                            <field name="google_calendar_cal_id"/>
                         </group>
                         <button
                             string="Reset Account" class="btn btn-secondary"
