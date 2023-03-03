@@ -2,11 +2,14 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import re
+import logging
 from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models
 
 from odoo.addons.google_calendar.utils.google_calendar import GoogleCalendarService
+
+_logger = logging.getLogger(__name__)
 
 
 class RecurrenceRule(models.Model):
@@ -120,6 +123,11 @@ class RecurrenceRule(models.Model):
                 self.env['calendar.event']._odoo_values(gevent),  # FIXME default reminders
                 need_sync=False,
             )
+
+            _logger.info(">> base_values: %s <<", base_values)
+            _logger.info(">> vals_list: %s <<", vals_list)
+
+
             # If we convert a single event into a recurrency on Google, we should reuse this event on Odoo
             # Google reuse the event google_id to identify the recurrence in that case
             base_event = self.env['calendar.event'].search([('google_id', '=', vals['google_id'])])
