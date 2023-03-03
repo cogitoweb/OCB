@@ -514,6 +514,7 @@ class Meeting(models.Model):
         """
         self.ensure_one()
         date = fields.Datetime.from_string(self.start)
+        result = ''
 
         if tz:
             timezone = pytz.timezone(tz or 'UTC')
@@ -768,6 +769,9 @@ class Meeting(models.Model):
             vals['follow_recurrence'] = True
         recurring_events = super().create(recurring_vals)
         events += recurring_events
+
+        _logger.info(">> recurring_events <<: %s", recurring_events)
+        _logger.info(">> recurring_vals <<: %s", recurring_vals)
 
         for event, vals in zip(recurring_events, recurring_vals):
             recurrence_values = {field: vals.pop(field) for field in recurrence_fields if field in vals}
