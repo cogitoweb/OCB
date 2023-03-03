@@ -191,7 +191,6 @@ class Meeting(models.Model):
             'method': "email" if alarm.alarm_type == "email" else "popup",
             'minutes': alarm.duration_minutes
         } for alarm in self.alarm_ids]
-        attendee_ids = self.attendee_ids.filtered(lambda a: a.partner_id not in self.user_id.partner_id and a.email)
         values = {
             'id': self.google_id,
             'start': start,
@@ -249,11 +248,12 @@ class Meeting(models.Model):
     def _notify_attendees(self):
         # filter events before notifying attendees through calendar_alarm_manager
         need_notifs = self.filtered(lambda event: event.alarm_ids and event.stop >= fields.Datetime.now())
+        partners = need_notifs.partner_ids
+        if partners:
+            self.env['calendar.alarm_manager']._notify_next_alarm(partners.ids)
 
-        partners_ids = []
-
-        for n in need_notifs:
-            partners_ids += n.partner_ids.ids
-
-        if partners_ids:
-            self.env['calendar.alarm_manager']._notify_next_alarm(partners_ids)
+    def _get_event_user(self):
+        self.ensure_one()
+        if self.user_id and self.user_id.sudo().google_calendar_token:
+            return self.user_id
+        return self.env.user
