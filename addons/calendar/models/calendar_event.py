@@ -744,6 +744,8 @@ class Meeting(models.Model):
                     continue
                 res_model_id = values.get('res_model_id', defaults.get('res_model_id'))
                 res_id = values.get('res_id', defaults.get('res_id'))
+                values['res_id'] = res_id = values.get('res_id') or defaults.get('res_id')
+                res_id = values.get('res_id', defaults.get('res_id'))
                 user_id = values.get('user_id', defaults.get('user_id'))
                 if not res_model_id or not res_id:
                     continue
