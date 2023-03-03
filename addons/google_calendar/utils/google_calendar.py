@@ -38,6 +38,7 @@ class GoogleCalendarService():
         url = "/calendar/v3/calendars/{0}/events".format(cal_id)
         headers = {'Content-type': 'application/json'}
         params = {'access_token': token}
+        #[TODO] pensarci su se ha senso
         if info_dict:
             params.update(info_dict)
 
