@@ -18,10 +18,11 @@ class GoogleAuth(http.Controller):
         dbname = state.get('d')
         service = state.get('s')
         url_return = state.get('f')
+        base_url = request.httprequest.url_root.strip('/')
 
         with registry(dbname).cursor() as cr:
             if kw.get('code'):
-                access_token, refresh_token, ttl = request.env['google.service']._get_google_tokens(kw['code'], service)
+                access_token, refresh_token, ttl = request.env['google.service'].with_context(base_url=base_url)._get_google_tokens(kw['code'], service)
                 # LUL TODO only defined in google_calendar
                 # non puo funzionare l'utente che fa la richiesta è google uno public user
                 # _logger.info(">>> kw: %s<<", kw)
