@@ -475,38 +475,40 @@ class Meeting(models.Model):
         return result
 
     def _attendees_values(self, partner_commands):
-        """
-        :param partner_commands: ORM commands for partner_id field (0 and 1 commands not supported)
-        :return: associated attendee_ids ORM commands
-        """
         attendee_commands = []
+        for r in self:
+            """
+            :param partner_commands: ORM commands for partner_id field (0 and 1 commands not supported)
+            :return: associated attendee_ids ORM commands
+            """
+            attendee_commands = []
 
-        removed_partner_ids = []
-        added_partner_ids = []
+            removed_partner_ids = []
+            added_partner_ids = []
 
-        _logger.info(partner_commands)
+            _logger.info(partner_commands)
 
-        for command in partner_commands:
-            op = command[0]
-            if op in (2, 3):  # Remove partner
-                removed_partner_ids += [command[1]]
-            elif op == 6:  # Replace all
-                removed_partner_ids += set(self.attendee_ids.mapped('partner_id').ids) - set(command[2])  # Don't recreate attendee if partner already attend the event
-                added_partner_ids += set(command[2]) - set(self.attendee_ids.mapped('partner_id').ids)
-            elif op == 4:
-                added_partner_ids += [command[1]] if command[1] not in self.attendee_ids.mapped('partner_id').ids else []
-            # commands 0 and 1 not supported
+            for command in partner_commands:
+                op = command[0]
+                if op in (2, 3):  # Remove partner
+                    removed_partner_ids += [command[1]]
+                elif op == 6:  # Replace all
+                    removed_partner_ids += set(r.attendee_ids.mapped('partner_id').ids) - set(command[2])  # Don't recreate attendee if partner already attend the event
+                    added_partner_ids += set(command[2]) - set(r.attendee_ids.mapped('partner_id').ids)
+                elif op == 4:
+                    added_partner_ids += [command[1]] if command[1] not in r.attendee_ids.mapped('partner_id').ids else []
+                # commands 0 and 1 not supported
 
-        attendees_to_unlink = self.env['calendar.attendee'].search([
-            ('event_id', 'in', self.ids),
-            ('partner_id', 'in', removed_partner_ids),
-        ]) if self else self.env['calendar.attendee']
-        attendee_commands += [[2, attendee.id] for attendee in attendees_to_unlink]  # Removes and delete
+            attendees_to_unlink = self.env['calendar.attendee'].search([
+                ('event_id', 'in', self.ids),
+                ('partner_id', 'in', removed_partner_ids),
+            ]) if self else self.env['calendar.attendee']
+            attendee_commands += [[2, attendee.id] for attendee in attendees_to_unlink]  # Removes and delete
 
-        attendee_commands += [
-            [0, 0, dict(partner_id=partner_id)]
-            for partner_id in added_partner_ids
-        ]
+            attendee_commands += [
+                [0, 0, dict(partner_id=partner_id)]
+                for partner_id in added_partner_ids
+            ]
         return attendee_commands
 
     def get_interval(self, interval, tz=None):
@@ -708,16 +710,17 @@ class Meeting(models.Model):
             # This prevent weird behavior when a user modified future events time fields and
             # the base event of a recurrence is accepted by the organizer but not the following events
             attendee_update_events.attendee_ids.filtered(lambda att: self.user_id.partner_id == att.partner_id).write({'state': 'needsAction'})
-
-        current_attendees = self.filtered('active').attendee_ids
-        if 'partner_ids' in values:
-            (current_attendees - previous_attendees)._send_mail_to_attendees('calendar.calendar_template_meeting_invitation')
-        if 'start' in values:
-            if not self.env.context.get('is_calendar_event_new') and 'start' in values:
-                start_date = fields.Datetime.to_datetime(values.get('start'))
-                # Only notify on future events
-                if start_date and start_date >= fields.Datetime.now():
-                    (current_attendees & previous_attendees)._send_mail_to_attendees('calendar.calendar_template_meeting_changedate', ignore_recurrence=not update_recurrence)
+        
+        for r in self: 
+            current_attendees = r.filtered('active').attendee_ids
+            if 'partner_ids' in values:
+                (current_attendees - previous_attendees)._send_mail_to_attendees('calendar.calendar_template_meeting_invitation')
+            if 'start' in values:
+                if not self.env.context.get('is_calendar_event_new') and 'start' in values:
+                    start_date = fields.Datetime.to_datetime(values.get('start'))
+                    # Only notify on future events
+                    if start_date and start_date >= fields.Datetime.now():
+                        (current_attendees & previous_attendees)._send_mail_to_attendees('calendar.calendar_template_meeting_changedate', ignore_recurrence=not update_recurrence)
 
         return True
 
@@ -786,7 +789,8 @@ class Meeting(models.Model):
             recurrence_values = {field: vals.pop(field) for field in recurrence_fields if field in vals}
             if vals.get('recurrency'):
                 detached_events = event._apply_recurrence_values(recurrence_values)
-                detached_events.active = False
+                if detached_events:
+                    detached_events.active = False
 
         events.filtered(lambda event: event.start > fields.Datetime.now()).attendee_ids._send_mail_to_attendees('calendar.calendar_template_meeting_invitation')
         events._sync_activities(fields={f for vals in vals_list for f in vals.keys()})
