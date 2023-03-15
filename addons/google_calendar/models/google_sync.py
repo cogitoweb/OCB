@@ -16,6 +16,7 @@ from odoo.osv import expression
 from odoo.addons.google_calendar.utils.google_event import GoogleEvent
 from odoo.addons.google_calendar.utils.google_calendar import GoogleCalendarService
 from odoo.addons.google_account.models.google_service import TIMEOUT
+from odoo.addons.calendar.models.calendar_recurrence import RecurrenceRule
 
 _logger = logging.getLogger(__name__)
 
@@ -149,8 +150,17 @@ class GoogleSync(models.AbstractModel):
             record.with_user(record._get_event_user())._google_patch(google_service, record.google_id, record._google_values())
 
     def _cancel(self):
-        self.google_id = False
-        self.unlink()
+        for r in self:
+            r.google_id = False
+
+            if isinstance(r, RecurrenceRule):
+                # devo skippare altrimenti 
+                # cerca di cancellare due 
+                # volte il record della ricorrenza 
+                # ma dice che e' già cancellato
+                continue
+
+            r.unlink()
 
     @api.model
     def _sync_google2odoo(self, google_events: GoogleEvent, default_reminders=()):
@@ -173,11 +183,14 @@ class GoogleSync(models.AbstractModel):
         new_odoo = self.with_context(dont_notify=True)._create_from_google(new, odoo_values)
         # Synced recurrences attendees will be notified once _apply_recurrence is called.
         if not self._context.get("dont_notify") and all(not e.is_recurrence() for e in google_events):
-            new_odoo._notify_attendees()
+            for new in new_odoo: 
+                new._notify_attendees()
 
         cancelled = existing.cancelled()
         cancelled_odoo = self.browse(cancelled.odoo_ids(self.env))
-        cancelled_odoo._cancel()
+        for cancelled_o in cancelled_odoo:
+            cancelled_o._cancel()
+
         synced_records = (new_odoo + cancelled_odoo).with_context(dont_notify=self._context.get("dont_notify", False))
         for gevent in existing - cancelled:
             # Last updated wins.
@@ -205,7 +218,6 @@ class GoogleSync(models.AbstractModel):
     def _google_patch(self, google_service: GoogleCalendarService, google_id, values, timeout=TIMEOUT):
         with google_calendar_token(self.env.user.sudo()) as token:
             if token:
-                _logger.info(">> token: %s <<", token)
                 google_service.patch(google_id, values, token=token, timeout=timeout)
                 self.need_sync = False
 
@@ -214,13 +226,10 @@ class GoogleSync(models.AbstractModel):
         if not values:
             return
         with google_calendar_token(self.env.user.sudo()) as token:
-            _logger.info(">> token: %s <<", token)
             if token:
                 send_updates = self._context.get('send_updates', True)
                 google_service.google_service = google_service.google_service.with_context(send_updates=send_updates)
                 google_id = google_service.insert(values, token=token, timeout=timeout)
-                _logger.info(">> google_id: %s <<", google_id)
-                
                 self.write({
                     'google_id': google_id,
                     'need_sync': False,
