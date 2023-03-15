@@ -36,14 +36,16 @@ class ResetGoogleAccount(models.TransientModel):
                     google.delete(event.google_id, token=token)
 
         if self.delete_policy in ('delete_odoo', 'delete_both'):
-            events.google_id = False
-            events.unlink()
+            for event in events: 
+                event.google_id = False
+                event.unlink()
 
         if self.sync_policy == 'all':
-            events.write({
-                'google_id': False,
-                'need_sync': True,
-            })
+            for event in events:
+                event.write({
+                    'google_id': False,
+                    'need_sync': True,
+                })
 
         self.user_id._set_auth_tokens(False, False, 0)
         self.user_id.write({
