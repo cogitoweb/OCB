@@ -353,15 +353,20 @@ class Meeting(models.Model):
             several days. As the user edit the {start,stop}_date fields when allday is true,
             this inverse method is needed to update the  start/stop value and have a relevant calendar view.
         """
-        system_tz_code = self.sudo().env.user.tz
-        system_tz = pytz.timezone(system_tz_code)
         for meeting in self:
             if meeting.allday:
-                startdate = fields.Datetime.from_string(meeting.start_date)
-                startdate = system_tz.localize(startdate).astimezone(pytz.utc)
 
+               # Convention break:
+                # stop and start are NOT in UTC in allday event
+                # in this case, they actually represent a date
+                # because fullcalendar just drops times for full day events.
+                # i.e. Christmas is on 25/12 for everyone
+                # even if people don't celebrate it simultaneously
                 enddate = fields.Datetime.from_string(meeting.stop_date)
-                enddate = system_tz.localize(enddate).astimezone(pytz.utc)
+                enddate = enddate.replace(hour=18)
+
+                startdate = fields.Datetime.from_string(meeting.start_date)
+                startdate = startdate.replace(hour=8)  # Set 8 AM
 
                 meeting.write({
                     'start': startdate.replace(tzinfo=None),
