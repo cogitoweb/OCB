@@ -26,8 +26,6 @@ class User(models.Model):
     google_calendar_last_sync_date = fields.Datetime()
 
     def _set_auth_tokens(self, access_token, refresh_token, ttl):
-        # _logger.info(">>> ACCESS_TOKEN:%s \n, rtoken: %s \n, ttl: %s\n<<<" % (access_token, refresh_token, ttl))
-        _logger.info(">>> self: %s <<<", self)
         self.sudo().write({
             'google_calendar_rtoken': refresh_token,
             'google_calendar_token': access_token,
@@ -98,7 +96,9 @@ class User(models.Model):
         # Google -> Odoo
         events.clear_type_ambiguity(self.env)
         recurrences = events.filter(lambda e: e.is_recurrence())
-        synced_recurrences = self.env['calendar.recurrence']._sync_google2odoo(recurrences)
+        synced_recurrences = self.env['calendar.recurrence'].browse()
+        if recurrences:
+            synced_recurrences = self.env['calendar.recurrence']._sync_google2odoo(recurrences)
         synced_events = self.env['calendar.event']._sync_google2odoo(events - recurrences, default_reminders=default_reminders)
 
         # Odoo -> Google
@@ -107,6 +107,10 @@ class User(models.Model):
         recurrences -= synced_recurrences
         recurrences.with_context(send_updates=send_updates)._sync_odoo2google(calendar_service)
         synced_events |= recurrences.calendar_event_ids - recurrences._get_outliers()
+        recurrences.with_context(send_updates=send_updates)._sync_odoo2google(calendar_service)
+        calendar_event_ids = self.env['calendar.event'].browse()
+        for sync_rr in synced_recurrences:
+            calendar_event_ids = sync_rr.calendar_event_ids + calendar_event_ids 
         synced_events |= synced_recurrences.calendar_event_ids - synced_recurrences._get_outliers()
         events = self.env['calendar.event']._get_records_to_sync(full_sync=full_sync)
 
