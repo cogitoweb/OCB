@@ -88,16 +88,14 @@ class Meeting(models.Model):
             # starting from python3.7, use the new [datetime, date].fromisoformat method
             start = parse(google_event.start.get('dateTime')).astimezone(pytz.utc).replace(tzinfo=None)
             stop = parse(google_event.end.get('dateTime')).astimezone(pytz.utc).replace(tzinfo=None)
-            values['start'] = start
-            values['stop'] = stop
             values['allday'] = False
         else:
-            start = google_event.start.get('date')
-            stop = google_event.end.get('date')
+            start = parse(google_event.start.get('date'))
+            stop = parse(google_event.end.get('date')) - relativedelta(days=1)
             stop = max(start, stop)  # For the cases that start date and end date were the same
-            values['start_date'] = start
-            values['stop_date'] = stop
             values['allday'] = True
+        values['start'] = start
+        values['stop'] = stop
         return values
 
     @api.model
