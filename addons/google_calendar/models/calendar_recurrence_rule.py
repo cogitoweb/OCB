@@ -44,8 +44,9 @@ class RecurrenceRule(models.Model):
                 event.google_id = False
         self.env['calendar.event'].create(vals)
 
-        if self.calendar_event_ids:
-            self.calendar_event_ids.need_sync = False
+        for cal_event in self.calendar_event_ids:
+            cal_event.need_sync = False
+    
         return detached_events
 
     def _get_event_google_id(self, event):
@@ -71,6 +72,7 @@ class RecurrenceRule(models.Model):
 
     def _cancel(self):
         self.calendar_event_ids._cancel()
+        self.unlink()
         super()._cancel()
 
     def _get_google_synced_fields(self):
@@ -114,8 +116,9 @@ class RecurrenceRule(models.Model):
         # to base_event start datetime.
         if self.rrule != current_rrule:
             detached_events = self._apply_recurrence()
-            detached_events.google_id = False
-            detached_events.unlink()
+            for dt in detached_events:
+                dt.google_id = False
+                detached_events.unlink()
 
     def _create_from_google(self, gevents, vals_list):
         for gevent, vals in zip(gevents, vals_list):
