@@ -24,11 +24,7 @@ class GoogleAuth(http.Controller):
             if kw.get('code'):
                 access_token, refresh_token, ttl = request.env['google.service'].with_context(base_url=base_url)._get_google_tokens(kw['code'], service)
                 # LUL TODO only defined in google_calendar
-                # non puo funzionare l'utente che fa la richiesta è google uno public user
-                # _logger.info(">>> kw: %s<<", kw)
-                admin = request.env['res.users'].sudo().search([('id', '=', 21)])
-                # _logger.info(">>> admin: %s<<", admin)
-                admin._set_auth_tokens(access_token, refresh_token, ttl)
+                request.env.user._set_auth_tokens(access_token, refresh_token, ttl)
                 return redirect(url_return)
             elif kw.get('error'):
                 return redirect("%s%s%s" % (url_return, "?error=", kw['error']))
