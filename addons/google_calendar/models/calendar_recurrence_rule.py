@@ -127,10 +127,6 @@ class RecurrenceRule(models.Model):
                 need_sync=False,
             )
 
-            _logger.info(">> base_values: %s <<", base_values)
-            _logger.info(">> vals_list: %s <<", vals_list)
-
-
             # If we convert a single event into a recurrency on Google, we should reuse this event on Odoo
             # Google reuse the event google_id to identify the recurrence in that case
             base_event = self.env['calendar.event'].search([('google_id', '=', vals['google_id'])])
