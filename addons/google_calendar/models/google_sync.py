@@ -131,17 +131,12 @@ class GoogleSync(models.AbstractModel):
     def _sync_odoo2google(self, google_service: GoogleCalendarService):
         if not self:
             return
-    
-        _logger.info(">> _sync_odoo2google: <<")
-
         records_to_sync = self.filtered('active')
         cancelled_records = self - records_to_sync
 
         updated_records = records_to_sync.filtered('google_id')
         new_records = records_to_sync - updated_records
         
-        _logger.info(">> new_records: %s <<", new_records)
-
         for record in cancelled_records.filtered('google_id'):
             record.with_user(record._get_event_user())._google_delete(google_service, record.google_id)
         for record in new_records:
@@ -249,9 +244,12 @@ class GoogleSync(models.AbstractModel):
                 ('google_id', '=', False),
                 ('active', '=', True),
                 ('need_sync', '=', True),
-                ('create_date', '>', '2023-02-22 00:00:00')
             ]
-        return self.with_context(active_test=False).search(domain)
+        # We want to limit to 200 event sync per transaction, it shouldn't be a problem for the day to day
+        # but it allows to run the first synchro within an acceptable time without timeout.
+        # If there is a lot of event to synchronize to google the first time,
+        # they will be synchronized eventually with the cron running few times a day
+        return self.with_context(active_test=False).search(domain, limit=200)
 
     def _write_from_google(self, gevent, vals):
         self.write(vals)
