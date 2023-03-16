@@ -21,6 +21,10 @@ class GoogleCalendarController(http.Controller):
         """
         if model == 'calendar.event':
             base_url = request.httprequest.url_root.strip('/')
+
+            # i need this for ngrok else redirect on http and doesn't work
+            base_url = base_url.replace('http://', 'https://', 1)
+
             GoogleCal = GoogleCalendarService(request.env['google.service'].with_context(base_url=base_url))
             # Checking that admin have already configured Google API for google synchronization !
             client_id = request.env['ir.config_parameter'].sudo().get_param('google_calendar_client_id')
@@ -44,7 +48,7 @@ class GoogleCalendarController(http.Controller):
                 }
             # If App authorized, and user access accepted, We launch the synchronization
             # for use the correct user in _sync_google_calendar force the sudo
-            need_refresh = request.env.user.sudo(request.env.user)._sync_google_calendar(GoogleCal)
+            need_refresh = request.env.user.sudo()._sync_google_calendar(GoogleCal)
             return {
                 "status": "need_refresh" if need_refresh else "no_new_event_from_google",
                 "url": ''
