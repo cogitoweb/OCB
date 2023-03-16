@@ -25,6 +25,8 @@ class ResetGoogleAccount(models.TransientModel):
     ], string="Next Synchronization", required=True, default='new')
 
     def reset_account(self):
+        # per permettere l'unlink altrimenti ho problemi di accessi
+        self.sudo()
         google = GoogleCalendarService(self.env['google.service'])
 
         events = self.env['calendar.event'].search([
