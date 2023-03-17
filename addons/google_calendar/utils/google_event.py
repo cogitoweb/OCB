@@ -142,6 +142,10 @@ class GoogleEvent(abc.Set):
         if real_owner_id and real_owner.exists():
             return real_owner
         elif self.organizer and self.organizer.get('self'):
+            # se commento questo controllo qui 
+            # l'organizzatore dell'evento risulta 
+            # corretto e non coral more bot
+            # pero' se cacello l'evento non va più
             return env.user
         elif self.organizer and self.organizer.get('email'):
             # In Google: 1 email = 1 user; but in Odoo several users might have the same email :/
