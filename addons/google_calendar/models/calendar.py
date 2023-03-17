@@ -69,6 +69,7 @@ class Meeting(models.Model):
             reminder_command = google_event.reminders.get('useDefault') and default_reminders or ()
         alarm_commands = self._odoo_reminders_commands(reminder_command)
         attendee_commands, partner_commands = self._odoo_attendee_commands(google_event)
+        # owner e' importante!
         values = {
             'name': google_event.summary or _("(No title)"),
             'description': google_event.description,
@@ -78,7 +79,7 @@ class Meeting(models.Model):
             'attendee_ids': attendee_commands,
             'partner_ids': partner_commands,
             'alarm_ids': alarm_commands,
-            'recurrency': google_event.is_recurrent()
+            'recurrency': google_event.is_recurrent(),
         }
 
         if not google_event.is_recurrence():
@@ -237,6 +238,7 @@ class Meeting(models.Model):
     def _cancel(self):
         # only owner can delete => others refuse the event
         user = self.env.user
+        _logger.info(">>> user: %s <<<", user)
         my_cancelled_records = self.filtered(lambda e: e.user_id == user)
         super(Meeting, my_cancelled_records)._cancel()
         attendees = (self - my_cancelled_records).attendee_ids.filtered(lambda a: a.partner_id == user.partner_id)
