@@ -36,6 +36,7 @@ from operator import attrgetter, itemgetter
 import babel.dates
 import dateutil.relativedelta
 import psycopg2
+from psycopg2.extensions import AsIs
 from lxml import etree
 from lxml.builder import E
 
@@ -3687,19 +3688,65 @@ class BaseModel(object):
             else:
                 updend.append(name)
 
-        if self._log_access:
-            updates.append(('write_uid', '%s', self._uid))
-            updates.append(('write_date', "(now() at time zone 'UTC')"))
-            direct.append('write_uid')
-            direct.append('write_date')
 
         if updates:
+            ids_to_skip = set()
+            optimize_updates = config.get('optimize_updates', False)
+            if optimize_updates and self.ids and self._name not in ('queue.job'):
+
+                check_query = """
+                    SELECT %s FROM %s WHERE id in %s
+                """
+
+                # updates example: [(u'picking_label_custom_text', '%s', '8'), (u'heading', '%s', '6')]
+                fields_to_update = ['"id"'] + map(lambda item: '"%s"' % item[0], updates)
+
+                update_values = map(lambda item: item[2], updates)
+                cr.execute(check_query, (AsIs(','.join(['id'] + fields_to_update)), AsIs(self._table), tuple(self.ids)))
+
+                res_list = cr.dictfetchall()
+
+                for rec_dict in res_list:
+                    rec_id = rec_dict.pop('id')
+
+                    if set(rec_dict.values()) == set(update_values):
+                        ids_to_skip.add(rec_id)
+                        _logger.info("Refusing to update record %s[%s] because no field changed. %s" % (self._name, rec_id, rec_dict))
+
+                # for record in self:
+                #     exclude = False
+                #     for field, value in vals.items():
+                #         if isinstance(value, (tuple, list)):
+                #             continue    # Ignore o2m and m2m fields
+
+                #         field_value = getattr(record, field)
+
+                #         # If field is m2o pick related record id
+                #         raw_value = field_value.id if isinstance(field_value, Model) else field_value
+                #         if raw_value == value:
+                #             exclude = True
+                #         else:
+                #             # If even one field changes, stop checking other fields and do not exclude it from update
+                #             exclude = False
+                #             break
+                #     if exclude:
+                #         # Remove record from recordset
+                #         _logger.info("Refusing to update record %s[%s] because no field changed" % (record._name, record.id))
+                #         ids_to_skip.add(record.id)
+
+            # Update write uid/date only when some other fields change
+            if self._log_access:
+                updates.append(('write_uid', '%s', self._uid))
+                updates.append(('write_date', "(now() at time zone 'UTC')"))
+                direct.append('write_uid')
+                direct.append('write_date')
+
             self.check_access_rule('write')
             query = 'UPDATE "%s" SET %s WHERE id IN %%s' % (
                 self._table, ','.join('"%s"=%s' % (u[0], u[1]) for u in updates),
             )
             params = tuple(u[2] for u in updates if len(u) > 2)
-            for sub_ids in cr.split_for_in_conditions(set(self.ids)):
+            for sub_ids in cr.split_for_in_conditions(set(self.ids) - ids_to_skip):
                 cr.execute(query, params + (sub_ids,))
                 if cr.rowcount != len(sub_ids):
                     raise MissingError(
