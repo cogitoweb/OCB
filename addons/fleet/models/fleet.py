@@ -150,7 +150,7 @@ class FleetVehicle(models.Model):
     company_id = fields.Many2one('res.company', 'Company')
     license_plate = fields.Char(required=True, help='License plate number of the vehicle (i = plate number for a car)')
     vin_sn = fields.Char('Chassis Number', help='Unique number written on the vehicle motor (VIN/SN number)', copy=False)
-    driver_id = fields.Many2one('res.partner', 'Driver', help='Driver of the vehicle')
+    driver_id = fields.Many2one('hr.employee', 'Driver', help='Driver of the vehicle')
     model_id = fields.Many2one('fleet.vehicle.model', 'Model', required=True, help='Model of the vehicle')
     log_fuel = fields.One2many('fleet.vehicle.log.fuel', 'vehicle_id', 'Fuel Logs')
     log_services = fields.One2many('fleet.vehicle.log.services', 'vehicle_id', 'Services Logs')
@@ -320,7 +320,7 @@ class FleetVehicle(models.Model):
                 oldmodel = vehicle.model_id.name or _('None')
                 changes.append(_("Model: from '%s' to '%s'") % (oldmodel, value))
             if 'driver_id' in vals and vehicle.driver_id.id != vals['driver_id']:
-                value = self.env['res.partner'].browse(vals['driver_id']).name
+                value = self.env['hr.employee'].browse(vals['driver_id']).name
                 olddriver = (vehicle.driver_id.name) or _('None')
                 changes.append(_("Driver: from '%s' to '%s'") % (olddriver, value))
             if 'state_id' in vals and vehicle.state_id.id != vals['state_id']:

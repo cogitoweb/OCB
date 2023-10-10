@@ -112,7 +112,8 @@ def check(f):
                 if tries >= MAX_TRIES_ON_CONCURRENCY_FAILURE:
                     _logger.info("%s, maximum number of tries reached" % errorcodes.lookup(e.pgcode))
                     raise
-                wait_time = random.uniform(0.0, 2 ** tries)
+                # cgt patch to reduce random retry to 0.1 - 1 sec
+                wait_time = random.uniform(0.1, 1)
                 tries += 1
                 _logger.info("%s, retry %d/%d in %.04f sec..." % (errorcodes.lookup(e.pgcode), tries, MAX_TRIES_ON_CONCURRENCY_FAILURE, wait_time))
                 time.sleep(wait_time)

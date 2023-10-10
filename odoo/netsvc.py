@@ -134,7 +134,7 @@ def init_logger():
             handler = logging.handlers.SysLogHandler('/var/run/log')
         else:
             handler = logging.handlers.SysLogHandler('/dev/log')
-        format = '%s %s' % (release.description, release.version) \
+        format = '%s' % tools.config['syslog_prefix'] \
                 + ':%(dbname)s:%(levelname)s:%(name)s:%(message)s'
 
     elif tools.config['logfile']:

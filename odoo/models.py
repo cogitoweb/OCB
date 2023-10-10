@@ -2585,10 +2585,20 @@ class BaseModel(object):
     def _auto_end(self):
         """ Create the foreign keys recorded by _auto_init. """
         cr = self._cr
-        query = 'ALTER TABLE "%s" ADD FOREIGN KEY ("%s") REFERENCES "%s" ON DELETE %s'
+        check = ("SELECT exists(SELECT 1 "
+                 "FROM   pg_catalog.pg_class c "
+                 "JOIN   pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
+                 "WHERE  n.nspname = 'public' "
+                 "AND    c.relname = '%s' "
+                 "AND    c.relkind = 'r') res")
+
+        query = 'ALTER TABLE IF EXISTS "%s" ADD FOREIGN KEY ("%s") REFERENCES "%s" ON DELETE %s'
         for table1, column, table2, ondelete, module in self._foreign_keys:
-            cr.execute(query % (table1, column, table2, ondelete))
-            self._save_constraint("%s_%s_fkey" % (table1, column), 'f', False, module)
+            cr.execute(check % (table1))
+            out = cr.dictfetchone()
+            if out['res']:
+               cr.execute(query % (table1, column, table2, ondelete))
+               self._save_constraint("%s_%s_fkey" % (table1, column), 'f', False, module)
         cr.commit()
         del type(self)._foreign_keys
 
