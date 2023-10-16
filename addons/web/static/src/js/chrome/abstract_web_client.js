@@ -207,7 +207,7 @@ var AbstractWebClient = Widget.extend(ServiceProviderMixin, KeyboardNavigationMi
                 }
             } else {
                 // ignore Chrome video internal error: https://crbug.com/809574
-                if (!error && message === 'ResizeObserver loop limit exceeded') {
+                if (!error && message.startsWith('ResizeObserver loop')) {
                     return;
                 }
                 var traceback = error ? error.stack : '';
