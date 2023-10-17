@@ -123,11 +123,6 @@ from ${object.company_id.name}.
                           </table>
                         </td>
                       </tr>
-                      <tr>
-                        <td align="center">
-                            Powered by <a href="https://www.odoo.com">Odoo</a>.
-                        </td>
-                      </tr>
                     </tbody>
                 </table>
                 </body>
