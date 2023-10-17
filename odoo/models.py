@@ -3711,7 +3711,7 @@ class BaseModel(object):
 
                     if set(rec_dict.values()) == set(update_values):
                         ids_to_skip.add(rec_id)
-                        _logger.info("Refusing to update record %s[%s] because no field changed. %s" % (self._name, rec_id, rec_dict))
+                        _logger.debug("Refusing to update record %s[%s] because no field changed. %s" % (self._name, rec_id, rec_dict))
 
                 # for record in self:
                 #     exclude = False
