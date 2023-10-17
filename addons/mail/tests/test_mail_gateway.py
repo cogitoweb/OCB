@@ -523,12 +523,6 @@ aa.com" style=3D"text-decoration:none; color: white;">info@aust-mfg.com</a>=
                           </tbody></table>
                         </td>
                       </tr>
-                      <tr>
-                        <td align=3D"center">
-                            Powered by <a href=3D"https://www.odoo.com">Odo=
-o</a>.
-                        </td>
-                      </tr>
                     </tbody>
                 </table>
                =20
