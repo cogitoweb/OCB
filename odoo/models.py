@@ -3689,7 +3689,7 @@ class BaseModel(object):
                 updend.append(name)
 
 
-        if updates:
+        if updates or direct:
             ids_to_skip = set()
             optimize_updates = config.get('optimize_updates', False)
             if optimize_updates and self.ids and self._name not in ('queue.job'):
@@ -3738,8 +3738,6 @@ class BaseModel(object):
             if self._log_access:
                 updates.append(('write_uid', '%s', self._uid))
                 updates.append(('write_date', "(now() at time zone 'UTC')"))
-                direct.append('write_uid')
-                direct.append('write_date')
 
             self.check_access_rule('write')
             query = 'UPDATE "%s" SET %s WHERE id IN %%s' % (
