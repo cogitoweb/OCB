@@ -3738,6 +3738,8 @@ class BaseModel(object):
             if self._log_access:
                 updates.append(('write_uid', '%s', self._uid))
                 updates.append(('write_date', "(now() at time zone 'UTC')"))
+                direct.append('write_uid')
+                direct.append('write_date')
 
             self.check_access_rule('write')
             query = 'UPDATE "%s" SET %s WHERE id IN %%s' % (
