@@ -433,10 +433,11 @@ var KanbanController = BasicController.extend({
      * @param {OdooEvent} event
      */
     _onResequenceColumn: function (event) {
-        var self = this;
-        this._resequenceColumns(event.data.ids).then(function () {
-            self._updateEnv();
-        });
+        // [cgt] Disable sorting columns in all kanbans.
+        // var self = this;
+        // this._resequenceColumns(event.data.ids).then(function () {
+        //     self._updateEnv();
+        // });
     },
     /**
      * @private
