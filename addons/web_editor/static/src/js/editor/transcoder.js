@@ -53,24 +53,31 @@ function getMatchedCSSRules(a) {
     var style;
     a.matches = a.matches || a.webkitMatchesSelector || a.mozMatchesSelector || a.msMatchesSelector || a.oMatchesSelector;
     for (r = 0; r < rulesCache.length; r++) {
-        if (a.matches(rulesCache[r].selector)) {
-            style = rulesCache[r].style;
-            if (style.parentRule) {
-                var style_obj = {};
-                var len;
-                for (k = 0, len = style.length ; k < len ; k++) {
-                    if (style[k].indexOf('animation') !== -1) {
-                        continue;
+
+        try {
+            if (a.matches(rulesCache[r].selector)) {
+                style = rulesCache[r].style;
+                if (style.parentRule) {
+                    var style_obj = {};
+                    var len;
+                    for (k = 0, len = style.length ; k < len ; k++) {
+                        if (style[k].indexOf('animation') !== -1) {
+                            continue;
+                        }
+                        style_obj[style[k]] = style[style[k].replace(/-(.)/g, function (a, b) { return b.toUpperCase(); })];
+                        if (new RegExp(style[k] + '\s*:[^:;]+!important' ).test(style.cssText)) {
+                            style_obj[style[k]] += ' !important';
+                        }
                     }
-                    style_obj[style[k]] = style[style[k].replace(/-(.)/g, function (a, b) { return b.toUpperCase(); })];
-                    if (new RegExp(style[k] + '\s*:[^:;]+!important' ).test(style.cssText)) {
-                        style_obj[style[k]] += ' !important';
-                    }
+                    rulesCache[r].style = style = style_obj;
                 }
-                rulesCache[r].style = style = style_obj;
+                css.push([rulesCache[r].selector, style]);
             }
-            css.push([rulesCache[r].selector, style]);
+        } catch (e) {
+            console.warn("Can't process match of: " + rulesCache[r].selector, e);
+            continue;
         }
+        
     }
 
     function specificity(selector) {
