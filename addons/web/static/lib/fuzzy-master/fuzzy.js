@@ -50,7 +50,7 @@ fuzzy.match = function(pattern, string, opts) {
     , compareString =  opts.caseSensitive && string || string.toLowerCase()
     , ch, compareChar;
 
-  var orig_pattern = pattern.slice();
+  var orig_pattern = '';
   pattern = opts.caseSensitive && pattern || pattern.toLowerCase();
 
   // For each character in the string, either add it to the result
@@ -60,6 +60,8 @@ fuzzy.match = function(pattern, string, opts) {
     var match_pos = compareString.indexOf(pattern);
     if(match_pos > -1) {
       currScore = 1;
+
+      orig_pattern = string.substring(match_pos, match_pos+string.length);
       ch = pre + orig_pattern  + post;
       currScore = 1;
       totalScore += currScore;
