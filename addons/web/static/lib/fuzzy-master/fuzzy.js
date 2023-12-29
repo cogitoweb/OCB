@@ -50,15 +50,13 @@ fuzzy.match = function(pattern, string, opts) {
     , compareString =  opts.caseSensitive && string || string.toLowerCase()
     , ch, compareChar;
 
-  var orig_pattern = pattern;
+  var orig_pattern = pattern.slice();
   pattern = opts.caseSensitive && pattern || pattern.toLowerCase();
 
   // For each character in the string, either add it to the result
   // or wrap in template if it's the next string in the pattern
 
   if(opts.matchWord) { // CGT add option to match full word
-    console.log(pattern + ' - ' + compareString);
-
     var match_pos = compareString.indexOf(pattern);
     if(match_pos > -1) {
       currScore = 1;
