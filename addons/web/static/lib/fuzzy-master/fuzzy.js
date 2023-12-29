@@ -61,7 +61,7 @@ fuzzy.match = function(pattern, string, opts) {
     if(match_pos > -1) {
       currScore = 1;
 
-      orig_pattern = string.substring(match_pos, match_pos+string.length);
+      orig_pattern = string.substring(match_pos, match_pos+pattern.length);
       ch = pre + orig_pattern  + post;
       currScore = 1;
       totalScore += currScore;
