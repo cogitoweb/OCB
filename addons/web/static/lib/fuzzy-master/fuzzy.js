@@ -50,6 +50,7 @@ fuzzy.match = function(pattern, string, opts) {
     , compareString =  opts.caseSensitive && string || string.toLowerCase()
     , ch, compareChar;
 
+  var orig_pattern = pattern;
   pattern = opts.caseSensitive && pattern || pattern.toLowerCase();
 
   // For each character in the string, either add it to the result
@@ -57,6 +58,23 @@ fuzzy.match = function(pattern, string, opts) {
 
   if(opts.matchWord) { // CGT add option to match full word
     console.log(pattern + ' - ' + compareString);
+
+    var match_pos = compareString.indexOf(pattern);
+    if(match_pos > -1) {
+      currScore = 1;
+      ch = pre + orig_pattern  + post;
+      currScore = 1;
+      totalScore += currScore;
+      patternIdx = pattern.length;
+
+      if(match_pos > 0) {
+        result[result.length] = string.substring(0, match_pos);
+      }
+      result[result.length] = ch;
+      if(match_pos + orig_pattern.length < string.length) {
+        result[result.length] = string.substring(match_pos + orig_pattern.length, string.length);
+      }
+    }
   }
   else 
   {
