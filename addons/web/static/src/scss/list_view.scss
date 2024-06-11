@@ -253,3 +253,8 @@
         }
     }
 }
+
+//tree decoration-xxxxxxx extension to add decoration-hidden option
+tr.text-hidden {
+  display: none;
+}
