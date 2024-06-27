@@ -21,7 +21,8 @@ var DECORATIONS = [
     'decoration-primary',
     'decoration-success',
     'decoration-warning',
-    'decoration-hidden'
+    'decoration-hidden',
+    'decoration-cgt-green'
 ];
 
 var FIELD_CLASSES = {
