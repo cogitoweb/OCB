@@ -162,9 +162,9 @@ var KanbanColumn = Widget.extend({
         this.$header.find('.o_column_title').text(title);
 
         this.$el.toggleClass('o_column_folded', this.folded && !config.device.isMobile);
-        var tooltip = this.data.count + _t(' records');
-        tooltip = '<p>' + tooltip + '</p>' + this.tooltipInfo;
-        this.$header.find('.o_kanban_header_title').tooltip({}).attr('data-original-title', tooltip);
+        // var tooltip = this.data.count + _t(' records');
+        // tooltip = '<p>' + tooltip + '</p>' + this.tooltipInfo;
+        this.$header.find('.o_kanban_header_title').tooltip({}).attr('data-original-title', '');
         if (!this.remaining) {
             this.$('.o_kanban_load_more').remove();
         } else {
