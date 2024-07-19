@@ -24,7 +24,8 @@ import types
 import werkzeug.utils
 import zipfile
 from io import StringIO
-from collections import defaultdict, Iterable, Mapping, MutableSet, OrderedDict
+from collections import defaultdict, OrderedDict
+from collections.abc import Iterable, Mapping, MutableSet
 from itertools import islice, groupby, repeat
 from lxml import etree
 from .which import which
@@ -140,7 +141,7 @@ def file_open(name, mode="r", subdir='addons', pathinfo=False):
     """Open a file from the OpenERP root, using a subdir folder.
 
     Example::
-    
+
     >>> file_open('hr/report/timesheer.xsl')
     >>> file_open('addons/hr/report/timesheet.xsl')
     >>> file_open('../../base/report/rml_template.xsl', subdir='addons/hr/report', pathinfo=True)
@@ -289,7 +290,7 @@ def flatten(list):
 
 def reverse_enumerate(l):
     """Like enumerate but in the other sens
-    
+
     Usage::
     >>> a = ['a', 'b', 'c']
     >>> it = reverse_enumerate(a)
