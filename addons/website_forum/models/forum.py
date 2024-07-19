@@ -166,7 +166,7 @@ class Forum(models.Model):
         post_tags = []
         existing_keep = []
         user = self.env.user
-        for tag in filter(None, tags.split(',')):
+        for tag in [_f for _f in tags.split(',') if _f]:
             if tag.startswith('_'):  # it's a new tag
                 # check that not arleady created meanwhile or maybe excluded by the limit on the search
                 tag_ids = Tag.search([('name', '=', tag[1:])])
@@ -379,7 +379,7 @@ class Post(models.Model):
         is_admin = user.id == SUPERUSER_ID
         # sudoed recordset instead of individual posts so values can be
         # prefetched in bulk
-        for post, post_sudo in itertools.izip(self, self.sudo()):
+        for post, post_sudo in zip(self, self.sudo()):
             is_creator = post.create_uid == user
 
             post.karma_accept = post.forum_id.karma_answer_accept_own if post.parent_id.create_uid == user else post.forum_id.karma_answer_accept_all

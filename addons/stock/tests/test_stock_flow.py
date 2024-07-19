@@ -1578,7 +1578,7 @@ class TestStockFlow(TestStockCommon):
             'location_dest_id': self.customer_location})
         # validate this delivery order, it should be in the waiting state
         picking_out.action_assign()
-        self.assertEquals(picking_out.state, "confirmed")
+        self.assertEqual(picking_out.state, "confirmed")
 
         # receive one product in stock
         inventory = self.env['stock.inventory'].create({
@@ -1595,7 +1595,7 @@ class TestStockFlow(TestStockCommon):
 
         # recheck availability of the delivery order, it should be assigned
         picking_out.action_assign()
-        self.assertEquals(picking_out.state, "assigned")
+        self.assertEqual(picking_out.state, "assigned")
 
     def test_71_picking_state_all_at_once_force_assign(self):
         """ This test will check that the state of the picking is correctly computed according
@@ -1626,11 +1626,11 @@ class TestStockFlow(TestStockCommon):
 
         # validate this delivery order, it should be in the waiting state
         picking_out.action_assign()
-        self.assertEquals(picking_out.state, "confirmed")
+        self.assertEqual(picking_out.state, "confirmed")
 
         # force assign on the delivery order, it should be assigned
         picking_out.force_assign()
-        self.assertEquals(picking_out.state, "assigned")
+        self.assertEqual(picking_out.state, "assigned")
 
     def test_72_picking_state_partial_reserve(self):
         """ This test will check that the state of the picking is correctly computed according
@@ -1674,7 +1674,7 @@ class TestStockFlow(TestStockCommon):
 
         # validate this delivery order, it should be in partially available
         picking_out.action_assign()
-        self.assertEquals(picking_out.state, "partially_available")
+        self.assertEqual(picking_out.state, "partially_available")
 
         # receive one product in stock
         inventory = self.env['stock.inventory'].create({
@@ -1691,7 +1691,7 @@ class TestStockFlow(TestStockCommon):
 
         # recheck availability of the delivery order, it should be assigned
         picking_out.action_assign()
-        self.assertEquals(picking_out.state, "assigned")
+        self.assertEqual(picking_out.state, "assigned")
 
     def test_73_picking_state_partial_force_assign(self):
         """ This test will check that the state of the picking is correctly computed according
@@ -1721,11 +1721,11 @@ class TestStockFlow(TestStockCommon):
 
         # validate this delivery order, it should be in the waiting state
         picking_out.action_assign()
-        self.assertEquals(picking_out.state, "confirmed")
+        self.assertEqual(picking_out.state, "confirmed")
 
         # force assign on the delivery order, it should be assigned
         picking_out.force_assign()
-        self.assertEquals(picking_out.state, "assigned")
+        self.assertEqual(picking_out.state, "assigned")
 
     def test_74_move_state_waiting_mto(self):
         """ This test will check that when a move is unreserved, its state changes to 'waiting' if
@@ -1780,14 +1780,14 @@ class TestStockFlow(TestStockCommon):
         move_with_ancestors.do_unreserve()
         other_move.do_unreserve()
 
-        self.assertEquals(move_mto_alone.state, "waiting")
-        self.assertEquals(move_with_ancestors.state, "waiting")
-        self.assertEquals(other_move.state, "confirmed")
+        self.assertEqual(move_mto_alone.state, "waiting")
+        self.assertEqual(move_with_ancestors.state, "waiting")
+        self.assertEqual(other_move.state, "confirmed")
 
         move_mto_alone.recalculate_move_state()
         move_with_ancestors.recalculate_move_state()
         other_move.recalculate_move_state()
 
-        self.assertEquals(move_mto_alone.state, "waiting")
-        self.assertEquals(move_with_ancestors.state, "waiting")
-        self.assertEquals(other_move.state, "confirmed")
+        self.assertEqual(move_mto_alone.state, "waiting")
+        self.assertEqual(move_with_ancestors.state, "waiting")
+        self.assertEqual(other_move.state, "confirmed")

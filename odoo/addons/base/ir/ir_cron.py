@@ -132,7 +132,7 @@ class ir_cron(models.Model):
                     _logger.warning("Method '%s.%s' does not exist.", model_name, method_name)
             else:
                 _logger.warning("Model %r does not exist.", model_name)
-        except Exception, e:
+        except Exception as e:
             _logger.exception("Call of self.env[%r].%s(*%r) failed in Job #%s",
                               model_name, method_name, args, job_id)
             self._handle_callback_exception(model_name, method_name, args, job_id, e)
@@ -254,7 +254,7 @@ class ir_cron(models.Model):
                     finally:
                         job_cr.close()
 
-                except psycopg2.OperationalError, e:
+                except psycopg2.OperationalError as e:
                     if e.pgcode == '55P03':
                         # Class 55: Object not in prerequisite state; 55P03: lock_not_available
                         _logger.debug('Another process/thread is already busy executing job `%s`, skipping it.', job['name'])

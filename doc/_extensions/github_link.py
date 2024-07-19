@@ -1,7 +1,7 @@
 import inspect
 import importlib
 import os.path
-from urlparse import urlunsplit
+from urllib.parse import urlunsplit
 
 """
 * adds github_link(mode) context variable: provides URL (in relevant mode) of
@@ -98,7 +98,7 @@ def add_doc_link(app, pagename, templatename, context, doctree):
     # in 1.3 source_suffix can be a list
     # in 1.8 source_suffix can be a mapping
     # FIXME: will break if we ever add support for !rst markdown documents maybe
-    if not isinstance(source_suffix, basestring):
+    if not isinstance(source_suffix, str):
         source_suffix = next(iter(source_suffix))
     # can't use functools.partial because 3rd positional is line not mode
     context['github_link'] = lambda mode='edit': make_github_link(

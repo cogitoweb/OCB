@@ -13,7 +13,7 @@ from odoo.models import check_method_name
 from odoo.tools.translate import translate
 from odoo.tools.translate import _
 
-import security
+from . import security
 
 _logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ def check(f):
                         pass
 
             uid = 1
-            if args and isinstance(args[0], (long, int)):
+            if args and isinstance(args[0], int):
                 uid = args[0]
 
             lang = ctx and ctx.get('lang')
@@ -117,9 +117,9 @@ def check(f):
                 tries += 1
                 _logger.info("%s, retry %d/%d in %.04f sec..." % (errorcodes.lookup(e.pgcode), tries, MAX_TRIES_ON_CONCURRENCY_FAILURE, wait_time))
                 time.sleep(wait_time)
-            except IntegrityError, inst:
+            except IntegrityError as inst:
                 registry = odoo.registry(dbname)
-                for key in registry._sql_error.keys():
+                for key in list(registry._sql_error.keys()):
                     if key in inst[0]:
                         raise ValidationError(tr(registry._sql_error[key], 'sql_constraint') or inst[0])
                 if inst.pgcode in (errorcodes.NOT_NULL_VIOLATION, errorcodes.FOREIGN_KEY_VIOLATION, errorcodes.RESTRICT_VIOLATION):
@@ -128,7 +128,7 @@ def check(f):
                     try:
                         # Get corresponding model and field
                         model = field = None
-                        for name, rclass in registry.items():
+                        for name, rclass in list(registry.items()):
                             if inst.diag.table_name == rclass._table:
                                 model = rclass
                                 field = model._fields.get(inst.diag.column_name)

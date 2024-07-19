@@ -59,7 +59,7 @@ class StockHistory(models.Model):
 
             histories_dict = {}
             not_real_cost_method_products = self.env['product.product'].browse(
-                record['product_id'] for record in stock_history_data.values()
+                record['product_id'] for record in list(stock_history_data.values())
             ).filtered(lambda product: product.cost_method != 'real')
             if not_real_cost_method_products:
                 self._cr.execute("""SELECT DISTINCT ON (product_id, company_id) product_id, company_id, cost
