@@ -65,7 +65,7 @@ class TestStockScrap(TransactionCase):
                 'product_uom_id': self.ref('product.product_uom_unit'),
                 'scrap_qty': 120,
             })
-        self.assertEquals(self.product_stockable.qty_available, 100.0)
+        self.assertEqual(self.product_stockable.qty_available, 100.0)
 
     def test_stock_scrap_02(self):
         """ Scrap a stockable product from a picking """
@@ -77,8 +77,8 @@ class TestStockScrap(TransactionCase):
             'picking_id': picking.id,
             'scrap_qty': 80,
         })
-        self.assertEquals(scrap.state, 'done')
-        self.assertEquals(self.product_stockable.qty_available, 20.0)
+        self.assertEqual(scrap.state, 'done')
+        self.assertEqual(self.product_stockable.qty_available, 20.0)
 
     def test_stock_scrap_03(self):
         """ Standalone scrap a consumable product """
@@ -88,8 +88,8 @@ class TestStockScrap(TransactionCase):
             'product_uom_id': self.ref('product.product_uom_unit'),
             'scrap_qty': 100,
         })
-        self.assertEquals(scrap.state, 'done')
-        self.assertEquals(self.product_consumable.qty_available, -100.0)
+        self.assertEqual(scrap.state, 'done')
+        self.assertEqual(self.product_consumable.qty_available, -100.0)
         with self.assertRaises(UserError):
             scrap.sudo(self.user_demo).unlink()
 
@@ -103,5 +103,5 @@ class TestStockScrap(TransactionCase):
             'picking_id': picking.id,
             'scrap_qty': 100,
         })
-        self.assertEquals(scrap.state, 'done')
-        self.assertEquals(self.product_consumable.qty_available, -100.0)
+        self.assertEqual(scrap.state, 'done')
+        self.assertEqual(self.product_consumable.qty_available, -100.0)

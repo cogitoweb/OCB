@@ -33,7 +33,7 @@ class AuthSignupHome(Home):
             try:
                 self.do_signup(qcontext)
                 return self.web_login(*args, **kw)
-            except (SignupError, AssertionError), e:
+            except (SignupError, AssertionError) as e:
                 if request.env["res.users"].sudo().search([("login", "=", qcontext.get("login"))]):
                     qcontext["error"] = _("Another user is already registered using this email address.")
                 else:
@@ -65,7 +65,7 @@ class AuthSignupHome(Home):
             except SignupError:
                 qcontext['error'] = _("Could not reset your password")
                 _logger.exception('error when resetting password')
-            except Exception, e:
+            except Exception as e:
                 qcontext['error'] = e.message or e.name
 
         return request.render('auth_signup.reset_password', qcontext)
@@ -81,13 +81,13 @@ class AuthSignupHome(Home):
 
     def get_auth_signup_qcontext(self):
         """ Shared helper returning the rendering context for signup and reset password """
-        qcontext = {k: v for (k, v) in request.params.items() if k in SIGN_UP_REQUEST_PARAMS}
+        qcontext = {k: v for (k, v) in list(request.params.items()) if k in SIGN_UP_REQUEST_PARAMS}
         qcontext.update(self.get_auth_signup_config())
         if qcontext.get('token'):
             try:
                 # retrieve the user info (name, login or email) corresponding to a signup token
                 token_infos = request.env['res.partner'].sudo().signup_retrieve_info(qcontext.get('token'))
-                for k, v in token_infos.items():
+                for k, v in list(token_infos.items()):
                     qcontext.setdefault(k, v)
             except:
                 qcontext['error'] = _("Invalid signup token")
@@ -97,7 +97,7 @@ class AuthSignupHome(Home):
     def do_signup(self, qcontext):
         """ Shared helper that creates a res.partner out of a token """
         values = { key: qcontext.get(key) for key in ('login', 'name', 'password') }
-        assert values.values(), "The form was not properly filled in."
+        assert list(values.values()), "The form was not properly filled in."
         assert values.get('password') == qcontext.get('confirm_password'), "Passwords do not match; please retype them."
         supported_langs = [lang['code'] for lang in request.env['res.lang'].sudo().search_read([], ['code'])]
         if request.lang in supported_langs:

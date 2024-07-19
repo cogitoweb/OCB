@@ -16,7 +16,7 @@ class AccountInvoice(models.Model):
     def _refund_cleanup_lines(self, lines):
         result = super(AccountInvoice, self)._refund_cleanup_lines(lines)
         for i, line in enumerate(lines):
-            for name, field in line._fields.items():
+            for name, field in list(line._fields.items()):
                 if name == 'asset_category_id':
                     result[i][2][name] = False
                     break

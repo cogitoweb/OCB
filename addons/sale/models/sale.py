@@ -371,7 +371,7 @@ class SaleOrder(models.Model):
         if not invoices:
             raise UserError(_('There is no invoicable line.'))
 
-        for invoice in invoices.values():
+        for invoice in list(invoices.values()):
             invoice.compute_taxes()
             if not invoice.invoice_line_ids:
                 raise UserError(_('There is no invoicable line.'))
@@ -389,7 +389,7 @@ class SaleOrder(models.Model):
             invoice.message_post_with_view('mail.message_origin_link',
                 values={'self': invoice, 'origin': references[invoice]},
                 subtype_id=self.env.ref('mail.mt_note').id)
-        return [inv.id for inv in invoices.values()]
+        return [inv.id for inv in list(invoices.values())]
 
     @api.multi
     def action_draft(self):
@@ -519,8 +519,8 @@ class SaleOrder(models.Model):
                 for t in taxes:
                     if t['id'] == tax.id or t['id'] in tax.children_tax_ids.ids:
                         res[group] += t['amount']
-        res = sorted(res.items(), key=lambda l: l[0].sequence)
-        res = map(lambda l: (l[0].name, l[1]), res)
+        res = sorted(list(res.items()), key=lambda l: l[0].sequence)
+        res = [(l[0].name, l[1]) for l in res]
         return res
 
 
@@ -736,7 +736,7 @@ class SaleOrderLine(models.Model):
 
         # Prevent writing on a locked SO.
         protected_fields = self._get_protected_fields()
-        if 'done' in self.mapped('order_id.state') and any(f in values.keys() for f in protected_fields):
+        if 'done' in self.mapped('order_id.state') and any(f in list(values.keys()) for f in protected_fields):
             fields = self.env['ir.model.fields'].search([
                 ('name', 'in', protected_fields), ('model', '=', self._name)
             ])

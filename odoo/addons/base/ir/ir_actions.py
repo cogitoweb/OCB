@@ -224,7 +224,7 @@ class IrActionsReportXml(models.Model):
         Look up a report definition and render the report for the provided IDs.
         """
         report = self._lookup_report(name)
-        if isinstance(report, basestring):  # Qweb report
+        if isinstance(report, str):  # Qweb report
             # The only case where a QWeb report is rendered with this method occurs when running
             # yml tests originally written for RML reports.
             if tools.config['test_enable'] and not tools.config['test_report_directory']:
@@ -858,7 +858,7 @@ class IrActionsServer(models.Model):
 
         if self._context.get('onchange_self'):
             record_cached = self._context['onchange_self']
-            for field, new_value in res.iteritems():
+            for field, new_value in res.items():
                 record_cached[field] = new_value
         else:
             self.env[model].browse(ref_id).write(res)
@@ -1134,8 +1134,8 @@ class IrActionsTodo(models.Model):
             """ Checks if the todo's groups match those of the current user """
             return not todo.groups_id or bool(todo.groups_id & user_groups)
 
-        done = filter(groups_match, self.browse(self.search([('state', '!=', 'open')])))
-        total = filter(groups_match, self.browse(self.search([])))
+        done = list(filter(groups_match, self.browse(self.search([('state', '!=', 'open')]))))
+        total = list(filter(groups_match, self.browse(self.search([]))))
 
         return {
             'done': len(done),

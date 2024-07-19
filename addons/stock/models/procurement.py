@@ -250,7 +250,7 @@ class ProcurementOrder(models.Model):
 
             # Search all confirmed stock_moves and try to assign them
             confirmed_moves = self.env['stock.move'].search([('state', '=', 'confirmed'), ('product_uom_qty', '!=', 0.0)], limit=None, order='priority desc, date_expected asc')
-            for x in xrange(0, len(confirmed_moves.ids), 100):
+            for x in range(0, len(confirmed_moves.ids), 100):
                 # TDE CLEANME: muf muf
                 self.env['stock.move'].browse(confirmed_moves.ids[x:x + 100]).action_assign()
                 if use_new_cursor:
@@ -327,7 +327,7 @@ class ProcurementOrder(models.Model):
                 location_data[key]['orderpoints'] += orderpoint
                 location_data[key]['groups'] = self._procurement_from_orderpoint_get_groups([orderpoint.id])
 
-            for location_id, location_data in location_data.iteritems():
+            for location_id, location_data in location_data.items():
                 location_orderpoints = location_data['orderpoints']
                 product_context = dict(self._context, location=location_orderpoints[0].location_id.id)
                 substract_quantity = location_orderpoints.subtract_procurements_from_orderpoints()

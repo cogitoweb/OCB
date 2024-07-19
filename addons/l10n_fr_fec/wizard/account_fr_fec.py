@@ -6,7 +6,7 @@
 import base64
 import csv
 from datetime import datetime
-import StringIO
+import io
 
 from odoo import api, fields, models, _
 from odoo.exceptions import Warning, AccessDenied
@@ -120,7 +120,7 @@ class AccountFrFec(models.TransientModel):
             raise Warning(
                 _("FEC is for French companies only !"))
 
-        fecfile = StringIO.StringIO()
+        fecfile = io.StringIO()
         w = csv.writer(fecfile, delimiter='|')
         w.writerow(header)
 

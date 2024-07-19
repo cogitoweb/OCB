@@ -131,7 +131,7 @@ def profile(method=None, whitelist=None, blacklist=(None,), files=None,
 
         log = ["\n%-10s%-10s%s\n" % ('calls', 'queries', 'ms')]
 
-        for v in log_tracer.profiles.values():
+        for v in list(log_tracer.profiles.values()):
             v['report'] = {}
             l = len(v['calls'])
             for k, call in enumerate(v['calls']):
@@ -158,7 +158,7 @@ def profile(method=None, whitelist=None, blacklist=(None,), files=None,
 
             queries = 0
             delay = 0
-            for call in v['report'].values():
+            for call in list(v['report'].values()):
                 queries += call['nb_queries']
                 delay += call['delay']
 

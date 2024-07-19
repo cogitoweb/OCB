@@ -45,7 +45,7 @@ class IrModelFieldsAnonymizeWizard(models.TransientModel):
 
     @api.model
     def _get_summary_value(self):
-        summary = u''
+        summary = ''
         for anon_field in self.env['ir.model.fields.anonymization'].search([('state', '!=', 'not_existing')]):
             field = anon_field.field_id
             if field:
@@ -56,9 +56,9 @@ class IrModelFieldsAnonymizeWizard(models.TransientModel):
                     'field_name': field.field_description,
                     'state': anon_field.state,
                 }
-                summary += u" * %(model_name)s (%(model_code)s) -> %(field_name)s (%(field_code)s): state: (%(state)s)\n" % values
+                summary += " * %(model_name)s (%(model_code)s) -> %(field_name)s (%(field_code)s): state: (%(state)s)\n" % values
             else:
-                summary += u"* Missing local model (%s) and field (%s): state: (%s) \n" % (anon_field.model_name, anon_field.field_name, anon_field.state)
+                summary += "* Missing local model (%s) and field (%s): state: (%s) \n" % (anon_field.model_name, anon_field.field_name, anon_field.state)
         return summary
 
     @api.model

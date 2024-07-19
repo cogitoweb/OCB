@@ -178,7 +178,7 @@ class ImDispatch(object):
         while True:
             try:
                 self.loop()
-            except Exception, e:
+            except Exception as e:
                 _logger.exception("Bus.loop error, sleep and retry")
                 time.sleep(TIMEOUT)
 

@@ -72,7 +72,7 @@ class Property(models.Model):
                 value = False
             elif isinstance(value, models.BaseModel):
                 value = '%s,%d' % (value._name, value.id)
-            elif isinstance(value, (int, long)):
+            elif isinstance(value, int):
                 field_id = values.get('fields_id')
                 if not field_id:
                     if not prop:
@@ -176,7 +176,7 @@ class Property(models.Model):
                     result[id] = val
             # check for existence in batch, and update result accordingly
             existing = {rec.id: rec for rec in Comodel.browse(co_ids).exists()}
-            result = {id: existing.get(val, Comodel) for id, val in result.items()}
+            result = {id: existing.get(val, Comodel) for id, val in list(result.items())}
 
         else:
             for prop in props:
@@ -237,7 +237,7 @@ class Property(models.Model):
                 prop.write({'value': value})
 
         # create new properties for records that do not have one yet
-        for ref, id in refs.iteritems():
+        for ref, id in refs.items():
             value = clean(values[id])
             if value != default_value:
                 self.create({
@@ -268,13 +268,13 @@ class Property(models.Model):
             elif operator in ('!=', '<=', '<', '>', '>='):
                 value = makeref(value)
             elif operator in ('in', 'not in'):
-                value = map(makeref, value)
+                value = list(map(makeref, value))
             elif operator in ('=like', '=ilike', 'like', 'not like', 'ilike', 'not ilike'):
                 # most probably inefficient... but correct
                 target = self.env[comodel]
                 target_names = target.name_search(value, operator=operator, limit=None)
-                target_ids = map(itemgetter(0), target_names)
-                operator, value = 'in', map(makeref, target_ids)
+                target_ids = list(map(itemgetter(0), target_names))
+                operator, value = 'in', list(map(makeref, target_ids))
         elif field.type in ('integer', 'float'):
             # No record is created in ir.property if the field's type is float or integer with a value
             # equal to 0. Then to match with the records that are linked to a property field equal to 0,

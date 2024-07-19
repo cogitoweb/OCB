@@ -46,7 +46,7 @@ def get_boolean_group(name):
     return int(name[9:])
 
 def get_selection_groups(name):
-    return map(int, name[11:].split('_'))
+    return list(map(int, name[11:].split('_')))
 
 def parse_m2m(commands):
     "return a list of ids corresponding to a many2many value"
@@ -107,12 +107,12 @@ class Groups(models.Model):
                 return expression.AND(domains)
             else:
                 return expression.OR(domains)
-        if isinstance(operand, basestring):
+        if isinstance(operand, str):
             lst = False
             operand = [operand]
         where = []
         for group in operand:
-            values = filter(bool, group.split('/'))
+            values = list(filter(bool, group.split('/')))
             group_name = values.pop().strip()
             category_name = values and '/'.join(values).strip() or group_name
             group_domain = [('name', operator, lst and [group_name] or group_name)]
@@ -316,7 +316,7 @@ class Users(models.Model):
 
     @api.model
     def read_group(self, domain, fields, groupby, offset=0, limit=None, orderby=False, lazy=True):
-        groupby_fields = set([groupby] if isinstance(groupby, basestring) else groupby)
+        groupby_fields = set([groupby] if isinstance(groupby, str) else groupby)
         if groupby_fields.intersection(USER_PRIVATE_FIELDS):
             raise AccessError(_("Invalid 'group by' parameter"))
         return super(Users, self).read_group(domain, fields, groupby, offset=offset, limit=limit, orderby=orderby, lazy=lazy)
@@ -348,7 +348,7 @@ class Users(models.Model):
                     raise UserError(_("You cannot deactivate the user you're currently logged in as."))
 
         if self == self.env.user:
-            for key in values.keys():
+            for key in list(values.keys()):
                 if not (key in self.SELF_WRITEABLE_FIELDS or key.startswith('context_')):
                     break
             else:
@@ -534,7 +534,7 @@ class Users(models.Model):
             return False
         data_fields = self.env.cr.fetchone()
         # generate hmac key
-        key = (u'%s' % (data_fields,)).encode('utf-8')
+        key = ('%s' % (data_fields,)).encode('utf-8')
         # hmac the session id
         data = sid.encode('utf-8')
         h = hmac.new(key, data, sha256)
@@ -822,7 +822,7 @@ class GroupsView(models.Model):
             # determine sequence order: a group appears after its implied groups
             order = {g: len(g.trans_implied_ids & gs) for g in gs}
             # check whether order is total, i.e., sequence orders are distinct
-            if len(set(order.itervalues())) == len(gs):
+            if len(set(order.values())) == len(gs):
                 return (app, 'selection', gs.sorted(key=order.get))
             else:
                 return (app, 'boolean', gs)
@@ -836,7 +836,7 @@ class GroupsView(models.Model):
                 others += g
         # build the result
         res = []
-        for app, gs in sorted(by_app.iteritems(), key=lambda (a, _): a.sequence or 0):
+        for app, gs in sorted(iter(by_app.items()), key=lambda a__: a__[0].sequence or 0):
             res.append(linearize(app, gs))
         if others:
             res.append((self.env['ir.module.category'], 'boolean', others))
@@ -876,7 +876,7 @@ class UsersView(models.Model):
         add, rem = [], []
         values1 = {}
 
-        for key, val in values.iteritems():
+        for key, val in values.items():
             if is_boolean_group(key):
                 (add if val else rem).append(get_boolean_group(key))
             elif is_selection_groups(key):
@@ -888,7 +888,7 @@ class UsersView(models.Model):
 
         if 'groups_id' not in values and (add or rem):
             # remove group ids in `rem` and add group ids in `add`
-            values1['groups_id'] = zip(repeat(3), rem) + zip(repeat(4), add)
+            values1['groups_id'] = list(zip(repeat(3), rem)) + list(zip(repeat(4), add))
 
         return values1
 
@@ -903,7 +903,7 @@ class UsersView(models.Model):
     @api.multi
     def read(self, fields=None, load='_classic_read'):
         # determine whether reified groups fields are required, and which ones
-        fields1 = fields or self.fields_get().keys()
+        fields1 = fields or list(self.fields_get().keys())
         group_fields, other_fields = partition(is_reified_group, fields1)
 
         # read regular fields (other_fields); add 'groups_id' if necessary

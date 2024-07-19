@@ -33,7 +33,7 @@ class TestCalendar(TransactionCase):
 
         self.assertEqual(
             (m.start_datetime, m.stop_datetime),
-            (u'2017-07-12 14:30:00', u'2017-07-12 15:00:00'),
+            ('2017-07-12 14:30:00', '2017-07-12 15:00:00'),
             "Sanity check"
         )
 
@@ -123,35 +123,35 @@ class TestCalendar(TransactionCase):
             'name': "wheee",
             'start': '2017-07-12 14:30:00',
             'allday': False,
-            'rrule': u'FREQ=WEEKLY;BYDAY=WE;INTERVAL=1;COUNT=100',
+            'rrule': 'FREQ=WEEKLY;BYDAY=WE;INTERVAL=1;COUNT=100',
             'duration': 0.5,
             'stop': '2017-07-12 15:00:00',
         })
 
         values = {
             'allday': False,
-            'name': u'wheee',
+            'name': 'wheee',
             'attendee_ids': [
-                (0, 0, {'state': u'needsAction', 'partner_id': 8, 'email': u'bob@example.com'}),
-                (0, 0, {'state': u'needsAction', 'partner_id': 10, 'email': u'ed@example.com'}),
+                (0, 0, {'state': 'needsAction', 'partner_id': 8, 'email': 'bob@example.com'}),
+                (0, 0, {'state': 'needsAction', 'partner_id': 10, 'email': 'ed@example.com'}),
             ],
             'recurrency': True,
-            'privacy': u'public',
+            'privacy': 'public',
             'stop': '2017-07-10 16:00:00',
             'alarm_ids': [(6, 0, [])],
             'start': '2017-07-10 15:30:00',
-            'location': u"XXX",
+            'location': "XXX",
             'duration': 0.5,
             'partner_ids': [(4, 10), (4, 8)],
-            'description': u"A thing"
+            'description': "A thing"
         }
 
         records = m.detach_recurring_event(values)
         self.assertEqual(
             (m.start_datetime, m.stop_datetime),
-            (u'2017-07-12 14:30:00', u'2017-07-12 15:00:00'),
+            ('2017-07-12 14:30:00', '2017-07-12 15:00:00'),
         )
-        self.assertEquals(
+        self.assertEqual(
             (records.start_datetime, records.stop_datetime),
-            (u'2017-07-10 15:30:00', u'2017-07-10 16:00:00'),
+            ('2017-07-10 15:30:00', '2017-07-10 16:00:00'),
         )

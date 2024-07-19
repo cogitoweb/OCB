@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from lxml import etree, objectify
-from urllib2 import urlopen, Request
-from StringIO import StringIO
+from urllib.request import urlopen, Request
+from io import StringIO
 import xml.etree.ElementTree as ET
 from uuid import uuid4
 import logging
