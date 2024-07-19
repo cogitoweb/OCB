@@ -44,7 +44,7 @@ allowed_tags = frozenset({
     'ul', 'var', 'video', 'wbr'
 }) | frozenset([etree.Comment])
 
-safe_attrs = clean.safe_attrs | frozenset(
+safe_attrs = clean.clean.safe_attrs | frozenset(
     ['style',
      'data-o-mail-quote',  # quote detection
      'data-oe-model', 'data-oe-id', 'data-oe-field', 'data-oe-type', 'data-oe-expression', 'data-oe-translation-id', 'data-oe-nodeid',
