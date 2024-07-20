@@ -4,7 +4,8 @@
 """ Models registries.
 
 """
-from collections import Mapping, defaultdict, deque
+from collections import defaultdict, deque
+from collections.abc import Mapping
 from contextlib import closing
 from operator import attrgetter
 from weakref import WeakValueDictionary
@@ -125,7 +126,7 @@ class Registry(Mapping):
         # special cursor for test mode; None means "normal" mode
         self.test_cr = None
 
-        # Indicates that the registry is 
+        # Indicates that the registry is
         self.ready = False
 
         # Inter-process signaling:
