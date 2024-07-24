@@ -906,7 +906,7 @@ class ControllerType(type):
                 v.original_func.routing_type = routing_type or parent_routing_type
 
                 spec = inspect.signature(v.original_func)
-                first_arg = spec.args[1] if len(spec.args) >= 2 else None
+                first_arg = list(sign.parameters)[1] if len(sign.parameters) >= 2 else None
                 if first_arg in ["req", "request"]:
                     v._first_arg_is_req = True
 
