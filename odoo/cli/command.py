@@ -1,3 +1,4 @@
+from __future__ import print_function
 import logging
 import sys
 import os
@@ -16,17 +17,13 @@ class CommandType(type):
         if name != 'command':
             commands[name] = cls
 
-class Command(object, metaclass=CommandType):
-    """Subclass this class to define new odoo subcommands """
-
-    def run(self, args):
-        pass
+Command = CommandType('Command', (object,), {'run': lambda self, args: None})
 
 class Help(Command):
     """Display the list of available commands"""
     def run(self, args):
         print("Available commands:\n")
-        names = list(commands.keys())
+        names = list(commands)
         padding = max([len(k) for k in names]) + 2
         for k in sorted(names):
             name = k.ljust(padding, ' ')

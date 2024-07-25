@@ -3,7 +3,9 @@
 
 import json
 import pkgutil
+import re
 
+from odoo import fields
 from odoo.tests import common
 from odoo.tools.misc import mute_logger
 
@@ -19,7 +21,7 @@ def moreaction(**kwargs):
         view_mode='tree,form',
         view_type='form',
         views=[(False, 'tree'), (False, 'form')],
-        help="See all possible values")
+        help=u"See all possible values")
 
 def values(seq, field='value'):
     return [item[field] for item in seq]
@@ -93,7 +95,7 @@ class test_ids_stuff(ImporterCase):
             'rows': {'from': 0, 'to': 0},
             'record': 0,
             'field': '.id',
-            'message': "Unknown database identifier '42'",
+            'message': u"Unknown database identifier '42'",
         }])
 
     def test_create_with_xid(self):
@@ -101,7 +103,7 @@ class test_ids_stuff(ImporterCase):
         self.assertEqual(len(result['ids']), 1)
         self.assertFalse(result['messages'])
         self.assertEqual(
-            'somexmlid',
+            '__import__.somexmlid',
             self.xid(self.browse()[0]))
 
     def test_update_with_id(self):
@@ -144,18 +146,18 @@ class test_boolean_field(ImporterCase):
         ], values(records))
 
     def test_falses(self):
-        for lang, source, value in [('fr_FR', 'no', 'non'),
-                                    ('de_DE', 'no', 'nein'),
-                                    ('ru_RU', 'no', 'нет'),
-                                    ('nl_BE', 'false', 'vals'),
-                                    ('lt_LT', 'false', 'klaidingas')]:
+        for lang, source, value in [('fr_FR', 'no', u'non'),
+                                    ('de_DE', 'no', u'nein'),
+                                    ('ru_RU', 'no', u'нет'),
+                                    ('nl_BE', 'false', u'vals'),
+                                    ('lt_LT', 'false', u'klaidingas')]:
             self.add_translations('test_import.py', 'code', lang, (source, value))
-        falses = [['0'], ['no'], ['false'], ['FALSE'], [''],
-                  ['non'], # no, fr
-                  ['nein'], # no, de
-                  ['нет'], # no, ru
-                  ['vals'], # false, nl
-                  ['klaidingas'], # false, lt,
+        falses = [[u'0'], [u'no'], [u'false'], [u'FALSE'], [u''],
+                  [u'non'], # no, fr
+                  [u'nein'], # no, de
+                  [u'нет'], # no, ru
+                  [u'vals'], # false, nl
+                  [u'klaidingas'], # false, lt,
         ]
 
         result = self.import_(['value'], falses)
@@ -170,8 +172,8 @@ class test_boolean_field(ImporterCase):
         result = self.import_(['value'], trues)
         self.assertEqual(len(result['ids']), 10)
         self.assertEqual(result['messages'], [
-            message("Unknown value '%s' for boolean field 'Value', assuming 'yes'" % v[0],
-                    moreinfo="Use '1' for yes and '0' for no",
+            message(u"Unknown value '%s' for boolean field 'Value', assuming 'yes'" % v[0],
+                    moreinfo=u"Use '1' for yes and '0' for no",
                     type='warning', from_=i, to_=i, record=i)
             for i, v in enumerate(trues)
             if v[0] not in ('true', 'yes', '1')
@@ -264,7 +266,7 @@ class test_integer_field(ImporterCase):
             'rows': {'from': 0, 'to': 0},
             'record': 0,
             'field': 'value',
-            'message': "'zorglub' does not seem to be an integer for field 'Value'",
+            'message': u"'zorglub' does not seem to be an integer for field 'Value'",
         }])
 
 
@@ -331,8 +333,7 @@ class test_float_field(ImporterCase):
         result = self.import_(['value'], [['foobar']])
         self.assertIs(result['ids'], False)
         self.assertEqual(result['messages'], [
-            message("'foobar' does not seem to be a number for field 'Value'")])
-
+            message(u"'foobar' does not seem to be a number for field 'Value'")])
 
 class test_string_field(ImporterCase):
     model_name = 'export.string.bounded'
@@ -345,20 +346,20 @@ class test_string_field(ImporterCase):
 
     def test_imported(self):
         result = self.import_(['value'], [
-            ['foobar'],
-            ['foobarbaz'],
-            ['Með suð í eyrum við spilum endalaust'],
-            ["People 'get' types. They use them all the time. Telling "
-             "someone he can't pound a nail with a banana doesn't much "
-             "surprise him."]
+            [u'foobar'],
+            [u'foobarbaz'],
+            [u'Með suð í eyrum við spilum endalaust'],
+            [u"People 'get' types. They use them all the time. Telling "
+             u"someone he can't pound a nail with a banana doesn't much "
+             u"surprise him."]
         ])
         self.assertEqual(len(result['ids']), 4)
         self.assertFalse(result['messages'])
         self.assertEqual([
-            "foobar",
-            "foobarbaz",
-            "Með suð í eyrum ",
-            "People 'get' typ",
+            u"foobar",
+            u"foobarbaz",
+            u"Með suð í eyrum ",
+            u"People 'get' typ",
         ], values(self.read()))
 
 
@@ -367,16 +368,16 @@ class test_unbound_string_field(ImporterCase):
 
     def test_imported(self):
         result = self.import_(['value'], [
-            ['í dag viðrar vel til loftárása'],
+            [u'í dag viðrar vel til loftárása'],
             # ackbar.jpg
-            ["If they ask you about fun, you tell them – fun is a filthy"
-             " parasite"]
+            [u"If they ask you about fun, you tell them – fun is a filthy"
+             u" parasite"]
         ])
         self.assertEqual(len(result['ids']), 2)
         self.assertFalse(result['messages'])
         self.assertEqual([
-            "í dag viðrar vel til loftárása",
-            "If they ask you about fun, you tell them – fun is a filthy parasite"
+            u"í dag viðrar vel til loftárása",
+            u"If they ask you about fun, you tell them – fun is a filthy parasite"
         ], values(self.read()))
 
 
@@ -387,16 +388,30 @@ class test_required_string_field(ImporterCase):
     def test_empty(self):
         result = self.import_(['value'], [[]])
         self.assertEqual(result['messages'], [message(
-            "Missing required value for the field 'Value' (value)")])
+            u"Missing required value for the field 'Value' (value)")])
         self.assertIs(result['ids'], False)
 
     @mute_logger('odoo.sql_db', 'odoo.models')
     def test_not_provided(self):
         result = self.import_(['const'], [['12']])
         self.assertEqual(result['messages'], [message(
-            "Missing required value for the field 'Value' (value)")])
+            u"Missing required value for the field 'Value' (value)")])
         self.assertIs(result['ids'], False)
 
+    @mute_logger('odoo.sql_db', 'odoo.models')
+    def test_ignore_excess_messages(self):
+        result = self.import_(['const'], [[str(n)] for n in range(100)])
+        self.assertIs(result['ids'], False)
+        self.assertEqual(len(result['messages']), 11)
+        for m in result['messages'][:-1]:
+            self.assertEqual(m['type'], 'error')
+            self.assertEqual(m['message'], u"Missing required value for the field 'Value' (value)")
+        last = result['messages'][-1]
+        self.assertEqual(last['type'], 'warning')
+        self.assertEqual(
+            last['message'],
+            u"Found more than 10 errors and more than one error per 10 records, interrupted to avoid showing too many errors."
+        )
 
 class test_text(ImporterCase):
     model_name = 'export.text'
@@ -408,12 +423,12 @@ class test_text(ImporterCase):
         self.assertEqual([False], values(self.read()))
 
     def test_imported(self):
-        s = ("Breiðskífa er notað um útgefna hljómplötu sem inniheldur "
-             "stúdíóupptökur frá einum flytjanda. Breiðskífur eru oftast "
-             "milli 25-80 mínútur og er lengd þeirra oft miðuð við 33⅓ "
-             "snúninga 12 tommu vínylplötur (sem geta verið allt að 30 mín "
-             "hvor hlið).\n\nBreiðskífur eru stundum tvöfaldar og eru þær þá"
-             " gefnar út á tveimur geisladiskum eða tveimur vínylplötum.")
+        s = (u"Breiðskífa er notað um útgefna hljómplötu sem inniheldur "
+             u"stúdíóupptökur frá einum flytjanda. Breiðskífur eru oftast "
+             u"milli 25-80 mínútur og er lengd þeirra oft miðuð við 33⅓ "
+             u"snúninga 12 tommu vínylplötur (sem geta verið allt að 30 mín "
+             u"hvor hlið).\n\nBreiðskífur eru stundum tvöfaldar og eru þær þá"
+             u" gefnar út á tveimur geisladiskum eða tveimur vínylplötum.")
         result = self.import_(['value'], [[s]])
         self.assertEqual(len(result['ids']), 1)
         self.assertFalse(result['messages'])
@@ -461,13 +476,13 @@ class test_selection(ImporterCase):
         result = self.import_(['value'], [['Baz']])
         self.assertIs(result['ids'], False)
         self.assertEqual(result['messages'], [message(
-            "Value 'Baz' not found in selection field 'Value'",
+            u"Value 'Baz' not found in selection field 'Value'",
             moreinfo="Foo Bar Qux 4".split())])
 
         result = self.import_(['value'], [[42]])
         self.assertIs(result['ids'], False)
         self.assertEqual(result['messages'], [message(
-            "Value '42' not found in selection field 'Value'",
+            u"Value '42' not found in selection field 'Value'",
             moreinfo="Foo Bar Qux 4".split())])
 
 
@@ -594,7 +609,7 @@ class test_m2o(ImporterCase):
         result = self.import_(['value'], [[name2]])
         self.assertEqual(
             result['messages'],
-            [message("Found multiple matches for field 'Value' (2 matches)",
+            [message(u"Found multiple matches for field 'Value' (2 matches)",
                      type='warning')])
         self.assertEqual(len(result['ids']), 1)
         self.assertEqual([
@@ -616,7 +631,7 @@ class test_m2o(ImporterCase):
                 [record1.id],
         ])
         self.assertEqual(result['messages'], [
-            message("No matching record found for name '%s' in field 'Value'" % id,
+            message(u"No matching record found for name '%s' in field 'Value'" % id,
                     from_=index, to_=index, record=index,
                     moreinfo=moreaction(res_model='export.integer'))
             for index, id in enumerate([record1.id, record2.id, record1.id])])
@@ -627,7 +642,7 @@ class test_m2o(ImporterCase):
         result = self.import_(['value/.id'], [["foo"]])
 
         self.assertEqual(result['messages'], [
-            message("Invalid database id 'foo' for the field 'Value'",
+            message(u"Invalid database id 'foo' for the field 'Value'",
                     moreinfo=moreaction(res_model='ir.model.data',
                                         domain=[('model','=','export.integer')]))
         ])
@@ -639,29 +654,29 @@ class test_m2o(ImporterCase):
         """
         result = self.import_(['value/value'], [['42']])
         self.assertEqual(result['messages'], [
-            message("Can not create Many-To-One records indirectly, import "
-                    "the field separately")])
+            message(u"Can not create Many-To-One records indirectly, import "
+                    u"the field separately")])
         self.assertIs(result['ids'], False)
 
     def test_fail_noids(self):
         result = self.import_(['value'], [['nameisnoexist:3']])
         self.assertEqual(result['messages'], [message(
-            "No matching record found for name 'nameisnoexist:3' "
-            "in field 'Value'", moreinfo=moreaction(
+            u"No matching record found for name 'nameisnoexist:3' "
+            u"in field 'Value'", moreinfo=moreaction(
                 res_model='export.integer'))])
         self.assertIs(result['ids'], False)
 
         result = self.import_(['value/id'], [['noxidhere']])
         self.assertEqual(result['messages'], [message(
-            "No matching record found for external id 'noxidhere' "
-            "in field 'Value'", moreinfo=moreaction(
+            u"No matching record found for external id 'noxidhere' "
+            u"in field 'Value'", moreinfo=moreaction(
                 res_model='ir.model.data', domain=[('model','=','export.integer')]))])
         self.assertIs(result['ids'], False)
 
         result = self.import_(['value/.id'], [['66']])
         self.assertEqual(result['messages'], [message(
-            "No matching record found for database id '66' "
-            "in field 'Value'", moreinfo=moreaction(
+            u"No matching record found for database id '66' "
+            u"in field 'Value'", moreinfo=moreaction(
                 res_model='ir.model.data', domain=[('model','=','export.integer')]))])
         self.assertIs(result['ids'], False)
 
@@ -670,10 +685,38 @@ class test_m2o(ImporterCase):
             ['value', 'value/id'],
             [['somename', 'somexid']])
         self.assertEqual(result['messages'], [message(
-            "Ambiguous specification for field 'Value', only provide one of "
-            "name, external id or database id")])
+            u"Ambiguous specification for field 'Value', only provide one of "
+            u"name, external id or database id")])
         self.assertIs(result['ids'], False)
 
+    def test_name_create_enabled_m2o(self):
+        result = self.import_(['value'], [[101]])
+        self.assertEqual(result['messages'], [message(
+            u"No matching record found for name '101' "
+            u"in field 'Value'", moreinfo=moreaction(
+                res_model='export.integer'))])
+        self.assertIs(result['ids'], False)
+        context = {
+            'name_create_enabled_fields': {'value': True},
+        }
+        result = self.import_(['value'], [[101]], context=context)
+        self.assertFalse(result['messages'])
+        self.assertEqual(len(result['ids']), 1)
+
+class TestInvalidStrings(ImporterCase):
+    model_name = 'export.m2o.str'
+
+    @mute_logger('odoo.sql_db')
+    def test_fail_unpaired_surrogate(self):
+        result = self.import_(['child_id'], [['\uddff']])
+        self.assertTrue(result['messages'])
+        self.assertIn('surrogates', result['messages'][0]['message'])
+
+    @mute_logger('odoo.sql_db')
+    def test_fail_nul(self):
+        result = self.import_(['child_id'], [['\x00']])
+        self.assertTrue(result['messages'])
+        self.assertIn('NUL', result['messages'][0]['message'])
 
 class test_m2m(ImporterCase):
     model_name = 'export.many2many'
@@ -709,8 +752,8 @@ class test_m2m(ImporterCase):
     def test_noids(self):
         result = self.import_(['value/.id'], [['42']])
         self.assertEqual(result['messages'], [message(
-            "No matching record found for database id '42' in field "
-            "'Value'", moreinfo=moreaction(
+            u"No matching record found for database id '42' in field "
+            u"'Value'", moreinfo=moreaction(
                 res_model='ir.model.data', domain=[('model','=','export.many2many.other')]))])
         self.assertIs(result['ids'], False)
 
@@ -735,8 +778,8 @@ class test_m2m(ImporterCase):
     def test_noxids(self):
         result = self.import_(['value/id'], [['noxidforthat']])
         self.assertEqual(result['messages'], [message(
-            "No matching record found for external id 'noxidforthat' in field"
-            " 'Value'", moreinfo=moreaction(
+            u"No matching record found for external id 'noxidforthat' in field"
+            u" 'Value'", moreinfo=moreaction(
                 res_model='ir.model.data', domain=[('model','=','export.many2many.other')]))])
         self.assertIs(result['ids'], False)
 
@@ -763,8 +806,8 @@ class test_m2m(ImporterCase):
     def test_nonames(self):
         result = self.import_(['value'], [['wherethem2mhavenonames']])
         self.assertEqual(result['messages'], [message(
-            "No matching record found for name 'wherethem2mhavenonames' in "
-            "field 'Value'", moreinfo=moreaction(
+            u"No matching record found for name 'wherethem2mhavenonames' in "
+            u"field 'Value'", moreinfo=moreaction(
                 res_model='export.many2many.other'))])
         self.assertIs(result['ids'], False)
 
@@ -792,13 +835,13 @@ class test_o2m(ImporterCase):
     model_name = 'export.one2many'
 
     def test_name_get(self):
-        s = 'Java is a DSL for taking large XML files and converting them ' \
-            'to stack traces'
+        s = u'Java is a DSL for taking large XML files and converting them ' \
+            u'to stack traces'
         result = self.import_(
             ['const', 'value'],
             [['5', s]])
         self.assertEqual(result['messages'], [message(
-            "No matching record found for name '%s' in field 'Value'" % s,
+            u"No matching record found for name '%s' in field 'Value'" % s,
             moreinfo=moreaction(res_model='export.one2many.child'))])
         self.assertIs(result['ids'], False)
 
@@ -964,7 +1007,7 @@ class test_o2m_multiple(ImporterCase):
 
 class test_realworld(common.TransactionCase):
     def test_bigfile(self):
-        data = json.loads(pkgutil.get_data(self.__module__, 'contacts_big.json'))
+        data = json.loads(pkgutil.get_data(self.__module__, 'contacts_big.json').decode('utf-8'))
         result = self.env['res.partner'].load(['name', 'mobile', 'email', 'image'], data)
         self.assertFalse(result['messages'])
         self.assertEqual(len(result['ids']), len(data))
@@ -972,7 +1015,7 @@ class test_realworld(common.TransactionCase):
     def test_backlink(self):
         fnames = ["name", "type", "street", "city", "country_id", "category_id",
                   "supplier", "customer", "is_company", "parent_id"]
-        data = json.loads(pkgutil.get_data(self.__module__, 'contacts.json'))
+        data = json.loads(pkgutil.get_data(self.__module__, 'contacts.json').decode('utf-8'))
         result = self.env['res.partner'].load(fnames, data)
         self.assertFalse(result['messages'])
         self.assertEqual(len(result['ids']), len(data))
@@ -1024,9 +1067,9 @@ class test_date(ImporterCase):
     def test_invalid(self):
         result = self.import_(['value'], [['not really a date']])
         self.assertEqual(result['messages'], [
-            message("'not really a date' does not seem to be a valid date "
-                    "for field 'Value'",
-                    moreinfo="Use the format '2012-12-31'")])
+            message(u"'not really a date' does not seem to be a valid date "
+                    u"for field 'Value'",
+                    moreinfo=u"Use the format '2012-12-31'")])
         self.assertIs(result['ids'], False)
 
 
@@ -1046,9 +1089,9 @@ class test_datetime(ImporterCase):
     def test_invalid(self):
         result = self.import_(['value'], [['not really a datetime']])
         self.assertEqual(result['messages'], [
-            message("'not really a datetime' does not seem to be a valid "
-                    "datetime for field 'Value'",
-                    moreinfo="Use the format '2012-12-31 23:59:59'")])
+            message(u"'not really a datetime' does not seem to be a valid "
+                    u"datetime for field 'Value'",
+                    moreinfo=u"Use the format '2012-12-31 23:59:59'")])
         self.assertIs(result['ids'], False)
 
     def test_checktz1(self):
@@ -1064,7 +1107,7 @@ class test_datetime(ImporterCase):
             ['value'], [['2012-02-03 11:11:11']], {'tz': 'Pacific/Kiritimati'})
         self.assertFalse(result['messages'])
         self.assertEqual(
-            values(self.read(domain=[('id', 'in', result['ids'])])),
+            [fields.Datetime.to_string(value['value']) for value in self.read(domain=[('id', 'in', result['ids'])])],
             ['2012-02-02 21:11:11'])
 
         # UTC-0930
@@ -1072,7 +1115,7 @@ class test_datetime(ImporterCase):
             ['value'], [['2012-02-03 11:11:11']], {'tz': 'Pacific/Marquesas'})
         self.assertFalse(result['messages'])
         self.assertEqual(
-            values(self.read(domain=[('id', 'in', result['ids'])])),
+            [fields.Datetime.to_string(value['value']) for value in self.read(domain=[('id', 'in', result['ids'])])],
             ['2012-02-03 20:41:11'])
 
     def test_usertz(self):
@@ -1086,7 +1129,7 @@ class test_datetime(ImporterCase):
             ['value'], [['2012-02-03 11:11:11']])
         self.assertFalse(result['messages'])
         self.assertEqual(
-            values(self.read(domain=[('id', 'in', result['ids'])])),
+            [fields.Datetime.to_string(value['value']) for value in self.read(domain=[('id', 'in', result['ids'])])],
             ['2012-02-03 01:11:11'])
 
     def test_notz(self):
@@ -1098,7 +1141,7 @@ class test_datetime(ImporterCase):
         result = self.import_(['value'], [['2012-02-03 11:11:11']])
         self.assertFalse(result['messages'])
         self.assertEqual(
-            values(self.read(domain=[('id', 'in', result['ids'])])),
+            [fields.Datetime.to_string(value['value']) for value in self.read(domain=[('id', 'in', result['ids'])])],
             ['2012-02-03 11:11:11'])
 
 
@@ -1116,14 +1159,41 @@ class test_unique(ImporterCase):
         ])
         self.assertFalse(result['ids'])
         self.assertEqual(result['messages'], [
-            dict(message="The value for the field 'value' already exists. "
-                         "This might be 'Value' in the current model, "
-                         "or a field of the same name in an o2m.",
+            dict(message=u"The value for the field 'value' already exists "
+                         u"(this is probably 'Value' in the current model).",
                  type='error', rows={'from': 1, 'to': 1},
                  record=1, field='value'),
-            dict(message="The value for the field 'value' already exists. "
-                         "This might be 'Value' in the current model, "
-                         "or a field of the same name in an o2m.",
+            dict(message=u"The value for the field 'value' already exists "
+                         u"(this is probably 'Value' in the current model).",
                  type='error', rows={'from': 4, 'to': 4},
                  record=4, field='value'),
         ])
+
+    @mute_logger('odoo.sql_db')
+    def test_unique_pair(self):
+        result = self.import_(['value2', 'value3'], [
+            ['0', '1'],
+            ['1', '0'],
+            ['1', '1'],
+            ['1', '1'],
+        ])
+        self.assertFalse(result['ids'])
+        self.assertEqual(len(result['messages']), 1)
+        message = result['messages'][0]
+        self.assertEqual(message['type'], 'error')
+        self.assertEqual(message['record'], 3)
+        self.assertEqual(message['rows'], {'from': 3, 'to': 3})
+        m = re.match(
+            r"The values for the fields '([^']+)' already exist "
+            r"\(they are probably '([^']+)' in the current model\)\.",
+            message['message']
+        )
+        self.assertIsNotNone(m)
+        self.assertItemsEqual(
+            m.group(1).split(', '),
+            ['value2', 'value3']
+        )
+        self.assertItemsEqual(
+            m.group(2).split(', '),
+            ['Value2', 'Value3']
+        )

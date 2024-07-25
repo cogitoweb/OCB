@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from __future__ import print_function
 import code
 import logging
 import os
@@ -63,7 +64,7 @@ class Shell(Command):
     def console(self, local_vars):
         if not os.isatty(sys.stdin.fileno()):
             local_vars['__name__'] = '__main__'
-            exec(sys.stdin, local_vars)
+            exec(sys.stdin.read(), local_vars)
         else:
             if 'env' not in local_vars:
                 print('No environment set, use `%s shell -d dbname` to get one.' % sys.argv[0])

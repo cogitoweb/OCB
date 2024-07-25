@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 import argparse
 import os
 import re
@@ -133,4 +134,4 @@ def die(message, code=1):
 
 def warn(message):
     # ASK: shall we use logger ?
-    print("WARNING: " + message)
+    print("WARNING:", message)

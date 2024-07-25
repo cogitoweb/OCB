@@ -2,6 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 import time
+import sys
 
 from odoo import models, api
 
@@ -10,6 +11,7 @@ class m(models.Model):
         resource' and 'a lot of resource'.
     """
     _name = 'test.limits.model'
+    _description = 'Test Limits Model'
 
     @api.model
     def consume_nothing(self):

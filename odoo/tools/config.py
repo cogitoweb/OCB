@@ -1,16 +1,20 @@
 #odoo.loggers.handlers. -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import configparser
+try:
+    import configparser as ConfigParser
+except ImportError:
+    import ConfigParser
+
+import errno
+import logging
 import optparse
 import os
 import sys
+import tempfile
 import odoo
-import odoo.conf
-import odoo.loglevels as loglevels
-import logging
-import odoo.release as release
-from . import appdirs
+from .. import release, conf, loglevels
+from . import appdirs, pycompat
 
 from passlib.context import CryptContext
 crypt_context = CryptContext(schemes=['pbkdf2_sha512', 'plaintext'],
@@ -58,7 +62,6 @@ def _deduplicate_loggers(loggers):
         '{}:{}'.format(logger, level)
         for logger, level in dict(it.split(':') for it in loggers).items()
     )
-
 
 class configmanager(object):
     def __init__(self, fname=None):
@@ -115,42 +118,65 @@ class configmanager(object):
         group.add_option("--addons-path", dest="addons_path",
                          help="specify additional addons paths (separated by commas).",
                          action="callback", callback=self._check_addons_path, nargs=1, type="string")
-        group.add_option("--load", dest="server_wide_modules", help="Comma-separated list of server-wide modules.", my_default='web,web_kanban')
+        group.add_option("--load", dest="server_wide_modules", help="Comma-separated list of server-wide modules.", my_default='base,web')
 
         group.add_option("-D", "--data-dir", dest="data_dir", my_default=_get_default_datadir(),
                          help="Directory where to store Odoo data")
         parser.add_option_group(group)
 
-        # XML-RPC / HTTP
-        group = optparse.OptionGroup(parser, "XML-RPC Configuration")
-        group.add_option("--xmlrpc-interface", dest="xmlrpc_interface", my_default='',
-                         help="Specify the TCP IP address for the XML-RPC protocol. The empty string binds to all interfaces.")
-        group.add_option("--xmlrpc-port", dest="xmlrpc_port", my_default=8069,
-                         help="specify the TCP port for the XML-RPC protocol", type="int")
-        group.add_option("--no-xmlrpc", dest="xmlrpc", action="store_false", my_default=True,
-                         help="disable the XML-RPC protocol")
-        group.add_option("--proxy-mode", dest="proxy_mode", action="store_true", my_default=False,
-                         help="Enable correct behavior when behind a reverse proxy")
+        # HTTP
+        group = optparse.OptionGroup(parser, "HTTP Service Configuration")
+        group.add_option("--http-interface", dest="http_interface", my_default='',
+                         help="Listen interface address for HTTP services. "
+                              "Keep empty to listen on all interfaces (0.0.0.0)")
+        group.add_option("-p", "--http-port", dest="http_port", my_default=8069,
+                         help="Listen port for the main HTTP service", type="int", metavar="PORT")
         group.add_option("--longpolling-port", dest="longpolling_port", my_default=8072,
-                         help="specify the TCP port for longpolling requests", type="int")
+                         help="Listen port for the longpolling HTTP service", type="int", metavar="PORT")
+        group.add_option("--no-http", dest="http_enable", action="store_false", my_default=True,
+                         help="Disable the HTTP and Longpolling services entirely")
+        group.add_option("--proxy-mode", dest="proxy_mode", action="store_true", my_default=False,
+                         help="Activate reverse proxy WSGI wrappers (headers rewriting) "
+                              "Only enable this when running behind a trusted web proxy!")
+        # HTTP: hidden backwards-compatibility for "*xmlrpc*" options
+        hidden = optparse.SUPPRESS_HELP
+        group.add_option("--xmlrpc-interface", dest="http_interface", help=hidden)
+        group.add_option("--xmlrpc-port", dest="http_port", type="int", help=hidden)
+        group.add_option("--no-xmlrpc", dest="http_enable", action="store_false", help=hidden)
+
         parser.add_option_group(group)
 
         # WEB
         group = optparse.OptionGroup(parser, "Web interface Configuration")
-        group.add_option("--db-filter", dest="dbfilter", my_default='.*',
-                         help="Filter listed database", metavar="REGEXP")
+        group.add_option("--db-filter", dest="dbfilter", my_default='', metavar="REGEXP",
+                         help="Regular expressions for filtering available databases for Web UI. "
+                              "The expression can use %d (domain) and %h (host) placeholders.")
         parser.add_option_group(group)
 
         # Testing Group
         group = optparse.OptionGroup(parser, "Testing Configuration")
         group.add_option("--test-file", dest="test_file", my_default=False,
-                         help="Launch a python or YML test file.")
-        group.add_option("--test-report-directory", dest="test_report_directory", my_default=False,
-                         help="If set, will save sample of all reports in this directory.")
-        group.add_option("--test-enable", action="store_true", dest="test_enable",
-                         my_default=False, help="Enable YAML and unit tests.")
-        group.add_option("--test-commit", action="store_true", dest="test_commit",
-                         my_default=False, help="Commit database changes performed by YAML or XML tests.")
+                         help="Launch a python test file.")
+        group.add_option("--test-enable", action="callback", callback=self._test_enable_callback,
+                         dest='test_enable',
+                         help="Enable unit tests.")
+        group.add_option("--test-tags", dest="test_tags",
+                         help="""Comma separated list of spec to filter which tests to execute. Enable unit tests if set.
+                         A filter spec has the format: [-][tag][/module][:class][.method]
+                         The '-' specifies if we want to include or exclude tests matching this spec.
+                         The tag will match tags added on a class with a @tagged decorator. By default tag value is 'standard' when not
+                         given on include mode. '*' will match all tags. Tag will also match module name (deprecated, use /module)
+                         The module, class, and method will respectively match the module name, test class name and test method name.
+                         examples: :TestClass.test_func,/test_module,external
+                         """)
+
+        group.add_option("--screencasts", dest="screencasts", action="store", my_default=None,
+                         metavar='DIR',
+                         help="Screencasts will go in DIR/{db_name}/screencasts. '1' can be used to force the same dir as for screenshots.")
+        temp_tests_dir = os.path.join(tempfile.gettempdir(), 'odoo_tests')
+        group.add_option("--screenshots", dest="screenshots", action="store", my_default=temp_tests_dir,
+                         metavar='DIR',
+                         help="Screenshots will go in DIR/{db_name}/screenshots. Defaults to %s." % temp_tests_dir)
         parser.add_option_group(group)
 
         # Logging Group
@@ -205,15 +231,18 @@ class configmanager(object):
                          help="specify the database host")
         group.add_option("--db_port", dest="db_port", my_default=False,
                          help="specify the database port", type="int")
+        group.add_option("--db_sslmode", dest="db_sslmode", type="choice", my_default='prefer',
+                         choices=['disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full'],
+                         help="specify the database ssl connection mode (see PostgreSQL documentation)")
         group.add_option("--db_maxconn", dest="db_maxconn", type='int', my_default=64,
-                         help="specify the the maximum number of physical connections to posgresql")
-        group.add_option("--db-template", dest="db_template", my_default="template1",
+                         help="specify the maximum number of physical connections to PostgreSQL")
+        group.add_option("--db-template", dest="db_template", my_default="template0",
                          help="specify a custom database template to create a new database")
         parser.add_option_group(group)
 
-        group = optparse.OptionGroup(parser, "Internationalisation options",
-            "Use these options to translate Odoo to another language."
-            "See i18n section of the user manual. Option '-d' is mandatory."
+        group = optparse.OptionGroup(parser, "Internationalisation options. ",
+            "Use these options to translate Odoo to another language. "
+            "See i18n section of the user manual. Option '-d' is mandatory. "
             "Option '-l' is mandatory in case of importation"
             )
         group.add_option('--load-language', dest="load_language",
@@ -232,7 +261,9 @@ class configmanager(object):
 
         security = optparse.OptionGroup(parser, 'Security-related options')
         security.add_option('--no-database-list', action="store_false", dest='list_db', my_default=True,
-                            help="disable the ability to return the list of databases")
+                            help="Disable the ability to obtain or view the list of databases. "
+                                 "Also disable access to the database manager and selector, "
+                                 "so be sure to set a proper --database parameter first")
         parser.add_option_group(security)
 
         # Advanced options
@@ -307,7 +338,7 @@ class configmanager(object):
         arguments.
 
         This method initializes odoo.tools.config and openerp.conf (the
-        former should be removed in the furture) with library-wide
+        former should be removed in the future) with library-wide
         configuration values.
 
         This method must be called before proper usage of this library can be
@@ -378,17 +409,20 @@ class configmanager(object):
         # the same for the pidfile
         if self.options['pidfile'] in ('None', 'False'):
             self.options['pidfile'] = False
+        # the same for the test_tags
+        if self.options['test_tags'] == 'None':
+            self.options['test_tags'] = None
         # and the server_wide_modules
         if self.options['server_wide_modules'] in ('', 'None', 'False'):
-            self.options['server_wide_modules'] = 'web,web_kanban'
+            self.options['server_wide_modules'] = 'base,web'
 
-        # if defined dont take the configfile value even if the defined value is None
-        keys = ['xmlrpc_interface', 'xmlrpc_port', 'longpolling_port',
-                'db_name', 'db_user', 'db_password', 'db_host',
+        # if defined do not take the configfile value even if the defined value is None
+        keys = ['http_interface', 'http_port', 'longpolling_port', 'http_enable',
+                'db_name', 'db_user', 'db_password', 'db_host', 'db_sslmode',
                 'db_port', 'db_template', 'logfile', 'pidfile', 'smtp_port',
                 'email_from', 'smtp_server', 'smtp_user', 'smtp_password',
                 'db_maxconn', 'import_partial', 'addons_path',
-                'xmlrpc', 'syslog', 'without_demo',
+                'syslog', 'without_demo', 'screencasts', 'screenshots',
                 'dbfilter', 'log_level', 'log_db',
                 'log_db_level', 'geoip_database', 'dev_mode', 'shell_interface'
         ]
@@ -399,10 +433,10 @@ class configmanager(object):
             if getattr(opt, arg):
                 self.options[arg] = getattr(opt, arg)
             # ... or keep, but cast, the config file value.
-            elif isinstance(self.options[arg], str) and self.casts[arg].type in optparse.Option.TYPE_CHECKER:
+            elif isinstance(self.options[arg], pycompat.string_types) and self.casts[arg].type in optparse.Option.TYPE_CHECKER:
                 self.options[arg] = optparse.Option.TYPE_CHECKER[self.casts[arg].type](self.casts[arg], arg, self.options[arg])
 
-        if isinstance(self.options['log_handler'], str):
+        if isinstance(self.options['log_handler'], pycompat.string_types):
             self.options['log_handler'] = self.options['log_handler'].split(',')
         self.options['log_handler'].extend(opt.log_handler)
 
@@ -410,9 +444,9 @@ class configmanager(object):
         keys = [
             'language', 'translate_out', 'translate_in', 'overwrite_existing_translations',
             'dev_mode', 'shell_interface', 'smtp_ssl', 'load_language',
-            'stop_after_init', 'logrotate', 'without_demo', 'xmlrpc', 'syslog',
+            'stop_after_init', 'logrotate', 'without_demo', 'http_enable', 'syslog',
             'list_db', 'proxy_mode',
-            'test_file', 'test_enable', 'test_commit', 'test_report_directory',
+            'test_file', 'test_tags',
             'osv_memory_count_limit', 'osv_memory_age_limit', 'max_cron_threads', 'unaccent',
             'data_dir',
             'server_wide_modules',
@@ -434,7 +468,7 @@ class configmanager(object):
             if getattr(opt, arg) is not None:
                 self.options[arg] = getattr(opt, arg)
             # ... or keep, but cast, the config file value.
-            elif isinstance(self.options[arg], str) and self.casts[arg].type in optparse.Option.TYPE_CHECKER:
+            elif isinstance(self.options[arg], pycompat.string_types) and self.casts[arg].type in optparse.Option.TYPE_CHECKER:
                 self.options[arg] = optparse.Option.TYPE_CHECKER[self.casts[arg].type](self.casts[arg], arg, self.options[arg])
 
         self.options['root_path'] = os.path.abspath(os.path.expanduser(os.path.expandvars(os.path.join(os.path.dirname(__file__), '..'))))
@@ -461,7 +495,7 @@ class configmanager(object):
         self.options['translate_modules'] = opt.translate_modules and [m.strip() for m in opt.translate_modules.split(',')] or ['all']
         self.options['translate_modules'].sort()
 
-        dev_split = opt.dev_mode and  list(map(str.strip, opt.dev_mode.split(','))) or []
+        dev_split = opt.dev_mode and  [s.strip() for s in opt.dev_mode.split(',')] or []
         self.options['dev_mode'] = 'all' in dev_split and dev_split + ['pdb', 'reload', 'qweb', 'werkzeug', 'xml'] or dev_split
 
         if opt.pg_path:
@@ -471,12 +505,14 @@ class configmanager(object):
             if len(self.options['language']) > 5:
                 raise Exception('ERROR: The Lang name must take max 5 chars, Eg: -lfr_BE')
 
+        self.options['test_enable'] = bool(self.options['test_tags'])
+
         if opt.save:
             self.save()
 
-        odoo.conf.addons_paths = self.options['addons_path'].split(',')
+        conf.addons_paths = self.options['addons_path'].split(',')
 
-        odoo.conf.server_wide_modules = [
+        conf.server_wide_modules = [
             m.strip() for m in self.options['server_wide_modules'].split(',') if m.strip()
         ]
 
@@ -504,11 +540,21 @@ class configmanager(object):
 
         setattr(parser.values, option.dest, ",".join(ad_paths))
 
+    def _test_enable_callback(self, option, opt, value, parser):
+        if not parser.values.test_tags:
+            parser.values.test_tags = "+standard"
+
     def load(self):
-        p = configparser.ConfigParser()
+        outdated_options_map = {
+            'xmlrpc_port': 'http_port',
+            'xmlrpc_interface': 'http_interface',
+            'xmlrpc': 'http_enable',
+        }
+        p = ConfigParser.RawConfigParser()
         try:
             p.read([self.rcfile])
             for (name,value) in p.items('options'):
+                name = outdated_options_map.get(name, name)
                 if value=='True' or value=='true':
                     value = True
                 if value=='False' or value=='false':
@@ -518,8 +564,7 @@ class configmanager(object):
             for sec in p.sections():
                 if sec == 'options':
                     continue
-                if sec not in self.misc:
-                    self.misc[sec]= {}
+                self.misc.setdefault(sec, {})
                 for (name, value) in p.items(sec):
                     if value=='True' or value=='true':
                         value = True
@@ -528,14 +573,14 @@ class configmanager(object):
                     self.misc[sec][name] = value
         except IOError:
             pass
-        except configparser.NoSectionError:
+        except ConfigParser.NoSectionError:
             pass
 
     def save(self):
-        p = configparser.ConfigParser()
-        loglevelnames = dict(list(zip(list(self._LOGLEVELS.values()), list(self._LOGLEVELS.keys()))))
+        p = ConfigParser.RawConfigParser()
+        loglevelnames = dict(pycompat.izip(self._LOGLEVELS.values(), self._LOGLEVELS))
         p.add_section('options')
-        for opt in sorted(self.options.keys()):
+        for opt in sorted(self.options):
             if opt in ('version', 'language', 'translate_out', 'translate_in', 'overwrite_existing_translations', 'init', 'update'):
                 continue
             if opt in self.blacklist_for_save:
@@ -547,9 +592,9 @@ class configmanager(object):
             else:
                 p.set('options', opt, self.options[opt])
 
-        for sec in sorted(self.misc.keys()):
+        for sec in sorted(self.misc):
             p.add_section(sec)
-            for opt in sorted(self.misc[sec].keys()):
+            for opt in sorted(self.misc[sec]):
                 p.set(sec,opt,self.misc[sec][opt])
 
         # try to create the directories and write the file
@@ -558,7 +603,7 @@ class configmanager(object):
             if not rc_exists and not os.path.exists(os.path.dirname(self.rcfile)):
                 os.makedirs(os.path.dirname(self.rcfile))
             try:
-                p.write(file(self.rcfile, 'w'))
+                p.write(open(self.rcfile, 'w'))
                 if not rc_exists:
                     os.chmod(self.rcfile, 0o600)
             except IOError:
@@ -579,7 +624,7 @@ class configmanager(object):
 
     def __setitem__(self, key, value):
         self.options[key] = value
-        if key in self.options and isinstance(self.options[key], str) and \
+        if key in self.options and isinstance(self.options[key], pycompat.string_types) and \
                 key in self.casts and self.casts[key].type in optparse.Option.TYPE_CHECKER:
             self.options[key] = optparse.Option.TYPE_CHECKER[self.casts[key].type](self.casts[key], key, self.options[key])
 
@@ -604,9 +649,11 @@ class configmanager(object):
     @property
     def session_dir(self):
         d = os.path.join(self['data_dir'], 'sessions')
-        if not os.path.exists(d):
+        try:
             os.makedirs(d, 0o700)
-        else:
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
             assert os.access(d, os.W_OK), \
                 "%s: directory is not writable" % d
         return d

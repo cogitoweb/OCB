@@ -35,7 +35,7 @@ class _LogTracer(object):
 
         in_self = frame.f_locals['self']
 
-        if isinstance(in_self, (odoo.sql_db.Cursor, odoo.sql_db.TestCursor, odoo.sql_db.LazyCursor)):
+        if not isinstance(in_self, odoo.models.BaseModel):
             return self.tracer
 
         model = getattr(in_self, '_name', None)
@@ -131,7 +131,7 @@ def profile(method=None, whitelist=None, blacklist=(None,), files=None,
 
         log = ["\n%-10s%-10s%s\n" % ('calls', 'queries', 'ms')]
 
-        for v in list(log_tracer.profiles.values()):
+        for v in log_tracer.profiles.values():
             v['report'] = {}
             l = len(v['calls'])
             for k, call in enumerate(v['calls']):
@@ -158,7 +158,7 @@ def profile(method=None, whitelist=None, blacklist=(None,), files=None,
 
             queries = 0
             delay = 0
-            for call in list(v['report'].values()):
+            for call in v['report'].values():
                 queries += call['nb_queries']
                 delay += call['delay']
 
