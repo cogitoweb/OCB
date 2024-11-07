@@ -1,7 +1,7 @@
 # Translation of Odoo Server.
 # This file contains the translation of the following modules:
 # * report_intrastat
-# 
+#
 # Translators:
 # Francesco Garganese <francesco.garganese@aeromnia.aero>, 2016
 # Paolo Valier <paolo.valier@hotmail.it>, 2016
@@ -176,8 +176,8 @@ msgstr "Dati Intrastat"
 
 #. module: report_intrastat
 #: model:ir.actions.report.xml,name:report_intrastat.account_intrastatinvoices
-msgid "Intrastat Invoices"
-msgstr "Fatture Intrastat"
+msgid "Detailed Invoices"
+msgstr "Fatture Dettagliate"
 
 #. module: report_intrastat
 #: model:ir.model,name:report_intrastat.model_report_intrastat_code
