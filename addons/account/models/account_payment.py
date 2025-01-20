@@ -103,9 +103,9 @@ class account_abstract_payment(models.AbstractModel):
                 if ((dtype == 'in_refund' and inv.type == 'in_invoice') or
                         (dtype == 'in_invoice' and inv.type == 'in_refund')):
                     raise UserError(_("You cannot register payments for vendor bills and supplier refunds at the same time."))
-                if ((dtype == 'out_refund' and inv.type == 'out_invoice') or
-                        (dtype == 'out_invoice' and inv.type == 'out_refund')):
-                    raise UserError(_("You cannot register payments for customer invoices and credit notes at the same time."))
+                # if ((dtype == 'out_refund' and inv.type == 'out_invoice') or
+                #         (dtype == 'out_invoice' and inv.type == 'out_refund')):
+                #     raise UserError(_("You cannot register payments for customer invoices and credit notes at the same time."))
 
         # Look if we are mixin multiple commercial_partner or customer invoices with vendor bills
         multi = self.is_multi(invoices)
