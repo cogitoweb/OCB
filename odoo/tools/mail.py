@@ -3,7 +3,8 @@
 
 import cgi
 import logging
-import lxml.html.clean as clean
+import lxml.html.clean
+from lxml.html import clean, defs
 import random
 import re
 import socket
@@ -28,8 +29,8 @@ tags_to_kill = ["script", "head", "meta", "title", "link", "style", "frame", "if
 tags_to_remove = ['html', 'body']
 
 # allow new semantic HTML5 tags
-allowed_tags = clean.defs.tags | frozenset('article section header footer hgroup nav aside figure main'.split() + [etree.Comment])
-safe_attrs = clean.defs.safe_attrs | frozenset(
+allowed_tags = defs.tags | frozenset('article section header footer hgroup nav aside figure main'.split() + [etree.Comment])
+safe_attrs = defs.safe_attrs | frozenset(
     ['style',
      'data-o-mail-quote',  # quote detection
      'data-oe-model', 'data-oe-id', 'data-oe-field', 'data-oe-type', 'data-oe-expression', 'data-oe-translation-id', 'data-oe-nodeid',
