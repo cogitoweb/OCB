@@ -3,7 +3,6 @@
 
 """ Modules dependency graph. """
 
-import os, sys, imp
 from os.path import join as opj
 import itertools
 import zipimport
