@@ -30,7 +30,7 @@ import babel.core
 import passlib.utils
 import psycopg2
 import json
-import werkzeug.contrib.sessions
+from .tools._vendor import sessions
 import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.local
@@ -1004,7 +1004,7 @@ class AuthenticationError(Exception):
 class SessionExpiredException(Exception):
     pass
 
-class OpenERPSession(werkzeug.contrib.sessions.Session):
+class OpenERPSession(sessions.Session):
     def __init__(self, *args, **kwargs):
         self.inited = False
         self.modified = False
@@ -1310,7 +1310,7 @@ class Root(object):
         # Setup http sessions
         path = odoo.tools.config.session_dir
         _logger.debug('HTTP sessions stored in: %s', path)
-        return werkzeug.contrib.sessions.FilesystemSessionStore(path, session_class=OpenERPSession)
+        return sessions.FilesystemSessionStore(path, session_class=OpenERPSession)
 
     @lazy_property
     def nodb_routing_map(self):
