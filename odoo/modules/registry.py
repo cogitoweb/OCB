@@ -4,7 +4,8 @@
 """ Models registries.
 
 """
-from collections import Mapping, defaultdict, deque
+from collections import defaultdict, deque
+from collections.abc import Mapping
 from contextlib import closing
 from operator import attrgetter
 from weakref import WeakValueDictionary
