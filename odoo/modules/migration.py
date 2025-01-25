@@ -5,7 +5,7 @@
 
 from collections import defaultdict
 import glob
-import imp
+import importlib.util
 import logging
 import os
 from os.path import join as opj
@@ -17,6 +17,14 @@ from odoo.tools.parse_version import parse_version
 
 
 _logger = logging.getLogger(__name__)
+
+def load_script(path, module_name):
+    full_path = get_resource_path(*path.split(os.path.sep)) if not os.path.isabs(path) else path
+    spec = importlib.util.spec_from_file_location(module_name, full_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
 
 class MigrationManager(object):
     """
@@ -87,17 +95,16 @@ class MigrationManager(object):
 
         def convert_version(version):
             if version.count('.') >= 2:
-                return version  # the version number already containt the server version
+                return version  # the version number already contains the server version
             return "%s.%s" % (release.major_version, version)
 
         def _get_migration_versions(pkg, stage):
-            versions = list(set(
+            versions = sorted({
                 ver
-                for lv in list(self.migrations[pkg.name].values())
-                for ver, lf in list(lv.items())
+                for lv in self.migrations[pkg.name].values()
+                for ver, lf in lv.items()
                 if lf
-            ))
-            versions.sort(key=lambda k: parse_version(convert_version(k)))
+            }, key=lambda k: parse_version(convert_version(k)))
             if "0.0.0" in versions:
                 # reorder versions
                 versions.remove("0.0.0")
@@ -111,32 +118,39 @@ class MigrationManager(object):
             """ return a list of migration script files
             """
             m = self.migrations[pkg.name]
-            lst = []
 
-            mapping = {
-                'module': opj(pkg.name, 'migrations'),
-                'maintenance': opj('base', 'maintenance', 'migrations', pkg.name),
-            }
-
-            for x in list(mapping.keys()):
-                if version in m.get(x):
-                    for f in m[x][version]:
-                        if not f.startswith(stage + '-'):
-                            continue
-                        lst.append(opj(mapping[x], version, f))
-            lst.sort()
-            return lst
+            return sorted(
+                (
+                    f
+                    for k in m
+                    for f in m[k].get(version, [])
+                    if os.path.basename(f).startswith(f"{stage}-")
+                ),
+                key=os.path.basename,
+            )
 
         installed_version = getattr(pkg, 'load_version', pkg.installed_version) or ''
         parsed_installed_version = parse_version(installed_version)
         current_version = parse_version(convert_version(pkg.data['version']))
 
+        def compare(version):
+            if version == "0.0.0" and parsed_installed_version < current_version:
+                return True
+
+            full_version = convert_version(version)
+            majorless_version = (version != full_version)
+
+            if majorless_version:
+                # We should not re-execute major-less scripts when upgrading to new Odoo version
+                # a module in `9.0.2.0` should not re-execute a `2.0` script when upgrading to `10.0.2.0`.
+                # In which case we must compare just the module version
+                return parsed_installed_version[2:] < parse_version(full_version)[2:] <= current_version[2:]
+
+            return parsed_installed_version < parse_version(full_version) <= current_version
+
         versions = _get_migration_versions(pkg, stage)
-
         for version in versions:
-            if ((version == "0.0.0" and parsed_installed_version < current_version)
-               or parsed_installed_version < parse_version(convert_version(version)) <= current_version):
-
+            if compare(version):
                 strfmt = {'addon': pkg.name,
                           'stage': stage,
                           'version': stageformat[stage] % version,
@@ -146,31 +160,18 @@ class MigrationManager(object):
                     name, ext = os.path.splitext(os.path.basename(pyfile))
                     if ext.lower() != '.py':
                         continue
-                    mod = fp = fp2 = None
+                    mod = None
                     try:
-                        fp, fname = tools.file_open(pyfile, pathinfo=True)
-
-                        if not isinstance(fp, file):
-                            # imp.load_source need a real file object, so we create
-                            # one from the file-like object we get from file_open
-                            fp2 = os.tmpfile()
-                            fp2.write(fp.read())
-                            fp2.seek(0)
-                        try:
-                            mod = imp.load_source(name, fname, fp2 or fp)
-                            _logger.info('module %(addon)s: Running migration %(version)s %(name)s' % dict(strfmt, name=mod.__name__))
-                            migrate = mod.migrate
-                        except ImportError:
-                            _logger.exception('module %(addon)s: Unable to load %(stage)s-migration file %(file)s' % dict(strfmt, file=pyfile))
-                            raise
-                        except AttributeError:
-                            _logger.error('module %(addon)s: Each %(stage)s-migration file must have a "migrate(cr, installed_version)" function' % strfmt)
-                        else:
-                            migrate(self.cr, installed_version)
+                        mod = load_script(pyfile, name)
+                        _logger.info('module %(addon)s: Running migration %(version)s %(name)s' % dict(strfmt, name=mod.__name__))
+                        migrate = mod.migrate
+                    except ImportError:
+                        _logger.exception('module %(addon)s: Unable to load %(stage)s-migration file %(file)s' % dict(strfmt, file=pyfile))
+                        raise
+                    except AttributeError:
+                        _logger.error('module %(addon)s: Each %(stage)s-migration file must have a "migrate(cr, installed_version)" function' % strfmt)
+                    else:
+                        migrate(self.cr, installed_version)
                     finally:
-                        if fp:
-                            fp.close()
-                        if fp2:
-                            fp2.close()
                         if mod:
                             del mod
