@@ -29,7 +29,8 @@ import logging
 import operator
 import pytz
 import re
-from collections import defaultdict, MutableMapping, OrderedDict
+from collections import defaultdict, OrderedDict
+from collections.abc import MutableMapping
 from inspect import getmembers, currentframe
 from operator import attrgetter, itemgetter
 
