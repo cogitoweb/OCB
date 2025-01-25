@@ -21,7 +21,9 @@ import threading
 import traceback
 
 import werkzeug.serving
-import werkzeug.contrib.fixers
+
+from werkzeug.middleware.proxy_fix import ProxyFix as ProxyFix_
+ProxyFix = lambda app: ProxyFix_(app, x_for=1, x_proto=1, x_host=1)
 
 import odoo
 import odoo.tools.config as config
