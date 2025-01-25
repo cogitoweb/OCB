@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import api
-from . import custom
+# from . import custom
 from . import int_to_text
 from . import interface
 from . import print_fnc

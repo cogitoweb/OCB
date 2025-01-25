@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import ast
-from collections import OrderedDict, Sized, Mapping, defaultdict
+from collections import OrderedDict, defaultdict
+from collections.abc import Sized, Mapping
 from lxml import etree, html
 import re
 import traceback
@@ -15,7 +16,7 @@ from odoo.tools import wrap_values
 from itertools import tee
 import builtins
 from functools import reduce
-builtin_defaults = {name: getattr(__builtin__, name) for name in dir(__builtin__)}
+builtin_defaults = {name: getattr(__builtins__, name) for name in dir(__builtins__)}
 
 try:
     import astor
