@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from email import Encoders
+from email import encoders
 from email.charset import Charset
 from email.header import Header
 from email.mime.base import MIMEBase
@@ -332,7 +332,7 @@ class IrMailServer(models.Model):
                 part.add_header('Content-Disposition', 'attachment', filename=filename_rfc2047)
 
                 part.set_payload(fcontent)
-                Encoders.encode_base64(part)
+                encoders.encode_base64(part)
                 msg.attach(part)
         return msg
 
