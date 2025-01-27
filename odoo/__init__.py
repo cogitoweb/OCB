@@ -7,6 +7,18 @@
 # Running mode flags (gevent, prefork)
 #----------------------------------------------------------
 # Is the server running with gevent.
+
+#----------------------------------------------------------
+# odoo must be a namespace package for odoo.addons to become one too
+# https://packaging.python.org/guides/packaging-namespace-packages/
+#----------------------------------------------------------
+import pkgutil
+import os.path
+__path__ = [
+    os.path.abspath(path)
+    for path in pkgutil.extend_path(__path__, __name__)
+]
+
 import sys
 evented = False
 if len(sys.argv) > 1 and sys.argv[1] == 'gevent':
