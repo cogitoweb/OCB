@@ -38,6 +38,10 @@ import werkzeug.routing
 import werkzeug.wrappers
 import werkzeug.wsgi
 from werkzeug.wsgi import wrap_file
+try:
+    from werkzeug.middleware.shared_data import SharedDataMiddleware
+except ImportError:
+    from werkzeug.wsgi import SharedDataMiddleware
 
 try:
     import psutil
@@ -1352,7 +1356,7 @@ class Root(object):
 
         if statics:
             _logger.info("HTTP Configuring static files")
-        app = werkzeug.wsgi.SharedDataMiddleware(self.dispatch, statics, cache_timeout=STATIC_CACHE)
+        app = SharedDataMiddleware(self.dispatch, statics, cache_timeout=STATIC_CACHE)
         self.dispatch = DisableCacheMiddleware(app)
 
     def setup_session(self, httprequest):
