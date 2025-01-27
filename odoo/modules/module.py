@@ -89,40 +89,35 @@ class OdooHook(object):
 
 def initialize_sys_path():
     """
-    Setup an import-hook to be able to import OpenERP addons from the different
-    addons paths.
-
-    This ensures something like ``import crm`` (or even
-    ``import odoo.addons.crm``) works even if the addons are not in the
-    PYTHONPATH.
+    Setup the addons path ``odoo.addons.__path__`` with various defaults
+    and explicit directories.
     """
-    global ad_paths
-    global hooked
+    # hook odoo.addons on data dir
+    dd = os.path.normcase(tools.config.addons_data_dir)
+    if os.access(dd, os.R_OK) and dd not in odoo.addons.__path__:
+        odoo.addons.__path__.append(dd)
 
-    dd = tools.config.addons_data_dir
-    if os.access(dd, os.R_OK) and dd not in ad_paths:
-        ad_paths.append(dd)
-
+    # hook odoo.addons on addons paths
     for ad in tools.config['addons_path'].split(','):
-        ad = os.path.abspath(tools.ustr(ad.strip()))
-        if ad not in ad_paths:
-            ad_paths.append(ad)
+        ad = os.path.normcase(os.path.abspath(tools.ustr(ad.strip())))
+        if ad not in odoo.addons.__path__:
+            odoo.addons.__path__.append(ad)
 
-    # add base module path
-    base_path = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'addons'))
-    if base_path not in ad_paths:
-        ad_paths.append(base_path)
+    # hook odoo.addons on base module path
+    base_path = os.path.normcase(os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'addons')))
+    if base_path not in odoo.addons.__path__ and os.path.isdir(base_path):
+        odoo.addons.__path__.append(base_path)
 
-    # add odoo.addons.__path__
-    for ad in __import__('odoo.addons').addons.__path__:
-        ad = os.path.abspath(ad)
-        if ad not in ad_paths:
-            ad_paths.append(ad)
 
-    if not hooked:
-        sys.meta_path.append(AddonsHook())
-        sys.meta_path.append(OdooHook())
-        hooked = True
+    # create decrecated module alias from odoo.addons.base.maintenance.migrations to odoo.upgrade
+    spec = importlib.machinery.ModuleSpec("odoo.addons.base.maintenance", None, is_package=True)
+    maintenance_pkg = importlib.util.module_from_spec(spec)
+    sys.modules["odoo.addons.base.maintenance"] = maintenance_pkg
+    # hook deprecated module alias from openerp to odoo and "crm"-like to odoo.addons
+    if not getattr(initialize_sys_path, 'called', False): # only initialize once
+        sys.meta_path.insert(0, OdooHook())
+        sys.meta_path.insert(0, AddonsHook())
+        initialize_sys_path.called = True
 
 def get_module_path(module, downloaded=False, display_warning=True):
     """Return the path of the given module.
@@ -334,7 +329,6 @@ def load_openerp_module(module_name):
     if module_name in loaded:
         return
 
-    initialize_sys_path()
     try:
         __import__('odoo.addons.' + module_name)
 
