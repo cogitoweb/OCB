@@ -201,8 +201,8 @@ def file_open(name, mode="r", subdir='addons', pathinfo=False):
 def _fileopen(path, mode, basedir, pathinfo, basename=None):
     name = os.path.normpath(os.path.normcase(os.path.join(basedir, path)))
 
-    import odoo.modules as addons
-    paths = addons.module.ad_paths + [config['root_path']]
+    import odoo.addons as addons
+    paths = addons.__path__ + [config['root_path']]
     for addons_path in paths:
         addons_path = os.path.normpath(os.path.normcase(addons_path)) + os.sep
         if name.startswith(addons_path):
