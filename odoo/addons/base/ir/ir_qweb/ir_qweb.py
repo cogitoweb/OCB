@@ -145,7 +145,7 @@ class IrQWeb(models.AbstractModel, QWeb):
                         args=[ast.Str('debug')],
                         keywords=[], starargs=None, kwargs=None
                     )),
-                    ast.keyword('async', self._get_attr_bool(el.get('async', False))),
+                    ast.keyword('asyncronous', self._get_attr_bool(el.get('asyncronous', False))),
                     ast.keyword('values', ast.Name(id='values', ctx=ast.Load())),
                 ],
                 starargs=None, kwargs=None
@@ -186,12 +186,12 @@ class IrQWeb(models.AbstractModel, QWeb):
         # in non-xml-debug mode we want assets to be cached forever, and the admin can force a cache clear
         # by restarting the server after updating the source code (or using the "Clear server cache" in debug tools)
         'xml' not in tools.config['dev_mode'],
-        tools.ormcache_context('xmlid', 'options.get("lang", "en_US")', 'css', 'js', 'debug', 'async', keys=("website_id",)),
+        tools.ormcache_context('xmlid', 'options.get("lang", "en_US")', 'css', 'js', 'debug', 'asyncronous', keys=("website_id",)),
     )
-    def _get_asset(self, xmlid, options, css=True, js=True, debug=False, async=False, values=None):
+    def _get_asset(self, xmlid, options, css=True, js=True, debug=False, asyncronous=False, values=None):
         files, remains = self._get_asset_content(xmlid, options)
         asset = AssetsBundle(xmlid, files, remains, env=self.env)
-        return asset.to_html(css=css, js=js, debug=debug, async=async, url_for=(values or {}).get('url_for', lambda url: url))
+        return asset.to_html(css=css, js=js, debug=debug, asyncronous=asyncronous, url_for=(values or {}).get('url_for', lambda url: url))
 
     @tools.ormcache_context('xmlid', 'options.get("lang", "en_US")', keys=("website_id",))
     def _get_asset_content(self, xmlid, options):
