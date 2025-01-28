@@ -3,7 +3,8 @@
 
 import json
 import time
-from werkzeug import exceptions, url_decode
+from werkzeug import exceptions
+from werkzeug.urls import url_decode
 from werkzeug.datastructures import Headers
 from werkzeug.test import Client
 from werkzeug.wrappers import BaseResponse
