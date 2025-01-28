@@ -29,7 +29,6 @@ README = ['README.rst', 'README.md', 'README.txt']
 _logger = logging.getLogger(__name__)
 
 # addons path as a list
-ad_paths = []
 hooked = False
 
 # Modules already loaded

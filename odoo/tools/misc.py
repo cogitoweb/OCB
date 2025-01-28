@@ -153,8 +153,8 @@ def file_open(name, mode="r", subdir='addons', pathinfo=False):
 
     @return fileobject if pathinfo is False else (fileobject, filepath)
     """
-    import odoo.modules as addons
-    adps = addons.module.ad_paths
+    import odoo.addons as addons
+    adps = addons.__path__
     rtp = os.path.normcase(os.path.abspath(config['root_path']))
 
     basename = name
