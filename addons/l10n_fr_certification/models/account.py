@@ -2,7 +2,7 @@
 from hashlib import sha256
 from json import dumps
 
-from openerp import models, api, fields
+from odoo import models, api, fields
 from openerp.tools.translate import _
 from openerp.exceptions import UserError
 

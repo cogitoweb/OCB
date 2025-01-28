@@ -1,4 +1,4 @@
-from openerp import models, api
+from odoo import models, api
 from openerp.tools.translate import _
 from openerp.exceptions import UserError
 

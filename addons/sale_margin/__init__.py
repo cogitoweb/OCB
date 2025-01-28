@@ -3,7 +3,7 @@
 
 from functools import partial
 import openerp
-from openerp import api, SUPERUSER_ID
+from odoo import api, SUPERUSER_ID
 
 from . import models      # noqa
 from . import report      # noqa

@@ -2,7 +2,7 @@
 
 import openerp
 import time
-from openerp import fields
+from odoo import fields
 
 from openerp.tests import common
 

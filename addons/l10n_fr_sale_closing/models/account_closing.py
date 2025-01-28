@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from openerp import models, api, fields
+from odoo import models, api, fields
 from openerp.fields import Datetime as FieldDateTime
 from openerp.tools.translate import _
 from openerp.exceptions import UserError

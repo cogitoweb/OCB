@@ -3,7 +3,7 @@ from hashlib import sha256
 from json import dumps
 import pytz
 
-from openerp import models, api, fields
+from odoo import models, api, fields
 from openerp.fields import Datetime
 from openerp.tools.translate import _
 from openerp.exceptions import UserError
