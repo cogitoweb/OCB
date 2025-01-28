@@ -3,8 +3,8 @@ from hashlib import sha256
 from json import dumps
 
 from odoo import models, api, fields
-from openerp.tools.translate import _
-from openerp.exceptions import UserError
+from odoo.tools.translate import _
+from odoo.exceptions import UserError
 
 
 #forbidden fields

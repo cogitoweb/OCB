@@ -5,7 +5,7 @@ diff --git a/__init__.py b/__init__.py
 +++ b/__init__.py
 @@ -0,0 +1,13 @@
 +# __init__.py
-+from openerp.osv import orm, fields
++from odoo.osv import orm, fields
 +
 +
 +class Times(orm.Model):

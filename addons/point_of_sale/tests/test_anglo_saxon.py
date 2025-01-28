@@ -4,7 +4,7 @@ import openerp
 import time
 from odoo import fields
 
-from openerp.tests import common
+from odoo.tests import common
 
 
 class TestAngloSaxonCommon(common.TransactionCase):
