@@ -28,16 +28,10 @@ class MailDeliveryException(except_orm):
     def __init__(self, name, value):
         super(MailDeliveryException, self).__init__(name, value)
 
-
 class WriteToLogger(object):
-    """debugging helper: behave as a fd and pipe to logger at the given level"""
-    def __init__(self, logger, level=logging.DEBUG):
-        self.logger = logger
-        self.level = level
-
     def write(self, s):
-        self.logger.log(self.level, s)
-
+        _logger.debug(s)
+smtplib.stderr = WriteToLogger()
 
 def try_coerce_ascii(string_utf8):
     """Attempts to decode the given utf8-encoded string
@@ -158,14 +152,6 @@ class IrMailServer(models.Model):
     sequence = fields.Integer(string='Priority', default=10, help="When no specific mail server is requested for a mail, the highest priority one "
                                                                   "is used. Default priority is 10 (smaller number = higher priority)")
     active = fields.Boolean(default=True)
-
-    def __init__(self, *args, **kwargs):
-        # Make sure we pipe the smtplib outputs to our own DEBUG logger
-        if not isinstance(smtplib.stderr, WriteToLogger):
-            logpiper = WriteToLogger(_logger)
-            smtplib.stderr = logpiper
-            smtplib.stdout = logpiper
-        super(IrMailServer, self).__init__(*args, **kwargs)
 
     @api.multi
     def name_get(self):
