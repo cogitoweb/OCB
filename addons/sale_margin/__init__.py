@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from functools import partial
-import openerp
+import odoo
 from odoo import api, SUPERUSER_ID
 
 from . import models      # noqa

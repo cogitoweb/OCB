@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import openerp
+import odoo
 import time
 from odoo import fields
 
