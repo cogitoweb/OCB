@@ -6,7 +6,7 @@
 import logging
 import math
 from datetime import timedelta
-from werkzeug import url_encode
+from werkzeug.urls import url_encode
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError, AccessError, ValidationError

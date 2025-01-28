@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from urllib.parse import urljoin
-from werkzeug import url_encode
+from werkzeug.urls import url_encode
 
 from odoo import api, fields, models
 from odoo.addons.website.models.website import slug

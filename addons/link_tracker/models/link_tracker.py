@@ -10,7 +10,7 @@ from lxml import html
 from urllib.request import urlopen
 from urllib.parse import urljoin
 from urllib.parse import urlparse
-from werkzeug import url_encode, unescape
+from werkzeug.urls import url_encode, unescape
 
 from odoo import models, fields, api, _
 from odoo.tools import ustr
