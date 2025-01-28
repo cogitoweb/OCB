@@ -4,6 +4,7 @@
 """ High-level objects for fields. """
 
 from collections import OrderedDict, defaultdict
+from collections.abc import Buffer
 from datetime import date, datetime
 from functools import partial
 from operator import attrgetter
@@ -1642,6 +1643,9 @@ class Datetime(Field):
         assert record, 'Record expected'
         return Datetime.to_string(Datetime.context_timestamp(record, Datetime.from_string(value)))
 
+# http://initd.org/psycopg/docs/usage.html#binary-adaptation
+# Received data is returned as buffer (in Python 2) or memoryview (in Python 3).
+_BINARY = memoryview
 
 class Binary(Field):
     type = 'binary'
@@ -1666,7 +1670,7 @@ class Binary(Field):
         return psycopg2.Binary(str(value)) if value else None
 
     def convert_to_cache(self, value, record, validate=True):
-        if isinstance(value, buffer):
+        if isinstance(value, _BINARY):
             return str(value)
         if isinstance(value, int) and \
                 (record._context.get('bin_size') or
