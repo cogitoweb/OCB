@@ -22,7 +22,7 @@ import time
 from contextlib import closing
 from distutils.version import LooseVersion
 from functools import partial
-from pyPdf import PdfFileWriter, PdfFileReader
+from pypdf import PdfWriter, PdfReader
 from reportlab.graphics.barcode import createBarcodeDrawing
 
 
@@ -562,13 +562,13 @@ class Report(models.Model):
         :param documents: list of path of pdf files
         :returns: path of the merged pdf
         """
-        writer = PdfFileWriter()
+        writer = PdfWriter()
         streams = []  # We have to close the streams *after* PdfFilWriter's call to write()
         try:
             for document in documents:
                 pdfreport = file(document, 'rb')
                 streams.append(pdfreport)
-                reader = PdfFileReader(pdfreport)
+                reader = PdfReader(pdfreport)
                 for page in range(0, reader.getNumPages()):
                     writer.addPage(reader.getPage(page))
 
