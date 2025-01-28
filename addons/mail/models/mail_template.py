@@ -10,6 +10,8 @@ import logging
 import lxml
 import urllib.parse
 from urllib.parse import urlencode, quote as quote
+from functools import reduce
+
 
 from odoo import _, api, fields, models, tools
 from odoo import report as odoo_report
@@ -33,6 +35,8 @@ def format_date(env, date, pattern=False):
     except babel.core.UnknownLocaleError:
         return date.strftime(pattern)
 
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 def format_tz(env, dt, tz=False, format=False):
     record_user_timestamp = env.user.sudo().with_context(tz=tz or env.user.sudo().tz or 'UTC')
