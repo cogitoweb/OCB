@@ -60,7 +60,7 @@ except (OSError, IOError):
 else:
     _logger.info('Will use the Wkhtmltopdf binary at %s' % _get_wkhtmltopdf_bin())
     out, err = process.communicate()
-    match = re.search('([0-9.]+)', out)
+    match = re.search('([0-9.]+)', str(out, encoding='UTF-8'))
     if match:
         version = match.group(0)
         if LooseVersion(version) < LooseVersion('0.12.0'):

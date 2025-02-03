@@ -130,12 +130,9 @@ class UNIX_LINE_TERMINATOR(csv.excel):
 csv.register_dialect("UNIX", UNIX_LINE_TERMINATOR)
 
 
-#
-# Helper functions for translating fields
-#
+# FIXME: holy shit this whole thing needs to be cleaned up hard it's a mess
 def encode(s):
-    if isinstance(s, str):
-        return s.encode('utf8')
+    assert isinstance(s, str)
     return s
 
 # which elements are translated inline
@@ -200,6 +197,7 @@ class XMLTranslator(object):
 
     def done(self, text):
         self.flush()
+        _logger.info("APPENDING %s" % text)
         self._done.append(text)
 
     def get_done(self):
@@ -273,12 +271,12 @@ class XMLTranslator(object):
             `attrib`, and already-serialized `content`.
         """
         if content:
-            elem = etree.tostring(etree.Element(tag, attrib), method='xml')
+            elem = etree.tostring(etree.Element(tag, attrib), method='xml', encoding='unicode')
             assert elem.endswith("/>")
             return "%s>%s</%s>" % (elem[:-2], content, tag)
         else:
-            return etree.tostring(etree.Element(tag, attrib), method=self.method)
-
+            res = etree.tostring(etree.Element(tag, attrib), method=self.method, encoding='unicode')
+            return res
 
 def xml_translate(callback, value):
     """ Translate an XML value (string), using `callback` for translating text

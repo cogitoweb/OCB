@@ -3,6 +3,9 @@
 
 import math
 
+def cmp(a, b):
+    return (a > b) - (a < b)
+
 def _float_check_precision(precision_digits=None, precision_rounding=None):
     assert (precision_digits is not None or precision_rounding is not None) and \
         not (precision_digits and precision_rounding),\
