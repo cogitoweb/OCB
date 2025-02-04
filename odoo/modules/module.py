@@ -206,7 +206,7 @@ def get_resource_from_path(path):
     :return: tuple(module_name, relative_path, os_relative_path) if possible, else None
     """
     resource = False
-    for adpath in ad_paths:
+    for adpath in odoo.addons.__path__:
         # force trailing separator
         adpath = os.path.join(adpath, "")
         if os.path.commonprefix([adpath, path]) == adpath:
@@ -364,7 +364,7 @@ def get_modules():
 
     plist = []
     initialize_sys_path()
-    for ad in ad_paths:
+    for ad in odoo.addons.__path__:
         plist.extend(listdir(ad))
     return list(set(plist))
 

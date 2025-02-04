@@ -331,7 +331,7 @@ class Registry(Mapping):
             model._auto_end()
             cr.commit()
 
-        for _, func, args in sorted(context['todo']):
+        for _, func, args in sorted(context['todo'], key=lambda item: item[0]):
             func(*args)
 
         if models:
