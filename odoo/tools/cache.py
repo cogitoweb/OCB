@@ -96,7 +96,9 @@ class ormcache(object):
 
     def clear(self, model, *args):
         """ Clear the registry cache """
-        model.pool._clear_cache()
+        d, key0, _ = self.lru(model)
+        d.clear()
+        model.pool.cache_cleared = True
 
 
 class ormcache_context(ormcache):
