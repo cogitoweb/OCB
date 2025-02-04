@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-try:
-    import io as StringIO
-except ImportError:
-    import io
+import io
+import base64
 
 from PIL import Image
 from PIL import ImageEnhance
@@ -53,7 +51,8 @@ def image_resize_image(base64_source, size=(1024, 1024), encoding='base64', file
         return False
     if size == (None, None):
         return base64_source
-    image_stream = io.StringIO(base64_source.decode(encoding))
+    decoded = base64.b64decode(base64_source)
+    image_stream = io.BytesIO(decoded)
     image = Image.open(image_stream)
     # store filetype here, as Image.new below will lose image.format
     filetype = (filetype or image.format).upper()
@@ -78,9 +77,9 @@ def image_resize_image(base64_source, size=(1024, 1024), encoding='base64', file
     if image.mode not in ["1", "L", "P", "RGB", "RGBA"] or (filetype == 'JPEG' and image.mode == 'RGBA'):
         image = image.convert("RGB")
 
-    background_stream = io.StringIO()
+    background_stream = io.BytesIO()
     image.save(background_stream, filetype)
-    return background_stream.getvalue().encode(encoding)
+    return base64.b64encode(background_stream.getvalue())
 
 def image_resize_and_sharpen(image, size, preserve_aspect_ratio=False, factor=2.0):
     """
@@ -95,14 +94,14 @@ def image_resize_and_sharpen(image, size, preserve_aspect_ratio=False, factor=2.
     origin_mode = image.mode
     if image.mode != 'RGBA':
         image = image.convert('RGBA')
-    image.thumbnail(size, Image.ANTIALIAS)
+    image.thumbnail(size, Image.LANCZOS)
     if preserve_aspect_ratio:
         size = image.size
     sharpener = ImageEnhance.Sharpness(image)
     resized_image = sharpener.enhance(factor)
     # create a transparent image for background and paste the image on it
     image = Image.new('RGBA', size, (255, 255, 255, 0))
-    image.paste(resized_image, ((size[0] - resized_image.size[0]) / 2, (size[1] - resized_image.size[1]) / 2))
+    image.paste(resized_image, (int((size[0] - resized_image.size[0]) / 2), int((size[1] - resized_image.size[1]) / 2)))
     if image.mode != origin_mode:
         image = image.convert(origin_mode)
     return image
