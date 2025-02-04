@@ -7,7 +7,7 @@ Miscellaneous tools used by OpenERP.
 """
 
 from functools import wraps
-import pickle
+import pickle as pickle_
 import cProfile
 from contextlib import contextmanager
 import datetime
@@ -23,7 +23,7 @@ import time
 import types
 import werkzeug.utils
 import zipfile
-from io import StringIO
+from io import StringIO, BytesIO
 from collections import defaultdict, OrderedDict
 from collections.abc import Iterable, Mapping, MutableSet
 from itertools import islice, groupby, repeat
@@ -1193,26 +1193,26 @@ def _consteq(str1, str2):
 
 consteq = getattr(passlib.utils, 'consteq', _consteq)
 
-class Pickle(object):
-    @classmethod
-    def load(cls, stream, errors=False):
-        unpickler = pickle.Unpickler(stream)
-        # pickle builtins: str/unicode, int/long, float, bool, tuple, list, dict, None
-        unpickler.find_global = None
-        try:
-            return unpickler.load()
-        except Exception:
-            _logger.warning('Failed unpickling data, returning default: %r', errors, exc_info=True)
-            return errors
+class Unpickler(pickle_.Unpickler, object):
+    find_global = None # Python 2
+    find_class = None # Python 3
+def _pickle_load(stream, encoding='ASCII', errors=False):
+    if sys.version_info[0] == 3:
+        unpickler = Unpickler(stream, encoding=encoding)
+    else:
+        unpickler = Unpickler(stream)
+    try:
+        return unpickler.load()
+    except Exception:
+        _logger.warning('Failed unpickling data, returning default: %r',
+                        errors, exc_info=True)
+        return errors
+pickle = types.ModuleType(__name__ + '.pickle')
+pickle.load = _pickle_load
+pickle.loads = lambda text, encoding='ASCII': _pickle_load(BytesIO(text), encoding=encoding)
+pickle.dump = pickle_.dump
+pickle.dumps = pickle_.dumps
 
-    @classmethod
-    def loads(cls, text):
-        return cls.load(StringIO(text))
-
-    dumps = pickle.dumps
-    dump = pickle.dump
-
-pickle = Pickle
 
 def wrap_values(d):
     # apparently sometimes people pass raw records as eval context
