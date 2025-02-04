@@ -17,6 +17,7 @@ from lxml import etree
 
 import odoo
 from odoo.loglevels import ustr
+import markupsafe
 
 _logger = logging.getLogger(__name__)
 
@@ -179,10 +180,10 @@ def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=Fals
     part = re.compile(r"(<(([^a<>]|a[^<>\s])[^<>]*)@[^<>]+>)", re.IGNORECASE | re.DOTALL)
     # remove results containing cite="mid:email_like@address" (ex: blockquote cite)
     # cite_except = re.compile(r"^((?!cite[\s]*=['\"]).)*$", re.IGNORECASE)
-    src = part.sub(lambda m: ('cite=' not in m.group(1) and 'alt=' not in m.group(1)) and cgi.escape(m.group(1)) or m.group(1), src)
+    src = part.sub(lambda m: ('cite=' not in m.group(1) and 'alt=' not in m.group(1)) and markupsafe.escape(m.group(1)) or m.group(1), src)
     # html encode mako tags <% ... %> to decode them later and keep them alive, otherwise they are stripped by the cleaner
-    src = src.replace('<%', cgi.escape('<%'))
-    src = src.replace('%>', cgi.escape('%>'))
+    src = src.replace('<%', markupsafe.escape('<%'))
+    src = src.replace('%>', markupsafe.escape('%>'))
 
     kwargs = {
         'page_structure': True,
@@ -344,7 +345,7 @@ def plaintext2html(text, container_tag=False):
         :param string container_tag: container of the html; by default the
             content is embedded into a <div>
     """
-    text = cgi.escape(ustr(text))
+    text = markupsafe.escape(ustr(text))
 
     # 1. replace \n and \r
     text = text.replace('\n', '<br/>')

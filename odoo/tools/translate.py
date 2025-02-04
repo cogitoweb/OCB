@@ -236,7 +236,7 @@ class XMLTranslator(object):
         ):
             # do not translate the contents of the node
             tail, node.tail = node.tail, None
-            self.done(etree.tostring(node, method=self.method))
+            self.done(etree.tostring(node, method=self.method, encoding='unicode'))
             self.todo(escape(tail or ""))
             return
 

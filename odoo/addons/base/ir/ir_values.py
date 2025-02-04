@@ -214,7 +214,7 @@ class IrValues(models.Model):
            :return: the newly created ir.values entry
         """
         if isinstance(value, str):
-            value = value.encode('utf8')
+            value = value
         if company_id is True:
             # should be company-specific, need to get company id
             company_id = self.env.user.company_id.id

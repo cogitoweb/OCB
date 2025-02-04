@@ -102,18 +102,18 @@ def _check_olecf(data):
 _Entry = collections.namedtuple('_Entry', ['mimetype', 'signatures', 'discriminants'])
 _mime_mappings = (
     # pdf
-    _Entry('application/pdf', ['%PDF'], []),
+    _Entry('application/pdf', [b'%PDF'], []),
     # jpg, jpeg, png, gif, bmp
-    _Entry('image/jpeg', ['\xFF\xD8\xFF\xE0', '\xFF\xD8\xFF\xE2', '\xFF\xD8\xFF\xE3', '\xFF\xD8\xFF\xE1'], []),
-    _Entry('image/png', ['\x89PNG\r\n\x1A\n'], []),
-    _Entry('image/gif', ['GIF87a', 'GIF89a'], []),
-    _Entry('image/bmp', ['BM'], []),
+    _Entry('image/jpeg', [b'\xFF\xD8\xFF\xE0', b'\xFF\xD8\xFF\xE2', b'\xFF\xD8\xFF\xE3', b'\xFF\xD8\xFF\xE1'], []),
+    _Entry('image/png', [b'\x89PNG\r\n\x1A\n'], []),
+    _Entry('image/gif', [b'GIF87a', b'GIF89a'], []),
+    _Entry('image/bmp', [b'BM'], []),
     # OLECF files in general (Word, Excel, PPT, default to word because why not?)
-    _Entry('application/msword', ['\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1', '\x0D\x44\x4F\x43'], [
+    _Entry('application/msword', [b'\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1', b'\x0D\x44\x4F\x43'], [
         _check_olecf
     ]),
     # zip, but will include jar, odt, ods, odp, docx, xlsx, pptx, apk
-    _Entry('application/zip', ['PK\x03\x04'], [_check_ooxml, _check_open_container_format]),
+    _Entry('application/zip', [b'PK\x03\x04'], [_check_ooxml, _check_open_container_format]),
 )
 def guess_mimetype(bin_data, default='application/octet-stream'):
     """ Attempts to guess the mime type of the provided binary data, similar

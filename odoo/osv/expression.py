@@ -114,6 +114,7 @@ start the server specifying the ``--unaccent`` flag.
 
 """
 import collections
+from collections.abc import Iterable
 
 import logging
 import traceback
@@ -930,7 +931,7 @@ class expression(object):
                         if ids2:
                             operator = 'not in' if operator in NEGATIVE_TERM_OPERATORS else 'in'
                     else:
-                        if isinstance(right, collections.Iterable):
+                        if isinstance(right, Iterable):
                             ids2 = right
                         else:
                             ids2 = [right]
@@ -987,7 +988,7 @@ class expression(object):
                     else:
                         subquery = 'SELECT "%s" FROM "%s" WHERE "%s" IN %%s' % (rel_id1, rel_table, rel_id2)
                         # avoid flattening of argument in to_sql()
-                        subquery = cr.mogrify(subquery, [tuple(ids2)])
+                        subquery = cr.mogrify(subquery, [tuple(ids2)]).decode()
                         push(create_substitution_leaf(leaf, ('id', 'inselect', (subquery, [])), internal=True))
                 else:
                     call_null_m2m = True
@@ -1017,7 +1018,7 @@ class expression(object):
                             subop = 'not inselect' if operator in NEGATIVE_TERM_OPERATORS else 'inselect'
                             subquery = 'SELECT "%s" FROM "%s" WHERE "%s" IN %%s' % (rel_id1, rel_table, rel_id2)
                             # avoid flattening of argument in to_sql()
-                            subquery = cr.mogrify(subquery, [tuple([_f for _f in res_ids if _f])])
+                            subquery = cr.mogrify(subquery, [tuple([_f for _f in res_ids if _f])]).decode()
                             push(create_substitution_leaf(leaf, ('id', subop, (subquery, [])), internal=True))
 
                     if call_null_m2m:

@@ -18,7 +18,7 @@ import psycopg2
 
 from odoo.sql_db import LazyCursor
 from odoo.tools import float_precision, float_repr, float_round, frozendict, \
-                       html_sanitize, human_size, pg_varchar, ustr, OrderedSet
+                       html_sanitize, human_size, pg_varchar, ustr, OrderedSet, pycompat
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DATE_FORMAT
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT as DATETIME_FORMAT
 from odoo.tools.translate import html_translate, _
@@ -834,7 +834,7 @@ class Field(object, metaclass=MetaField):
         if value is None or value == False:
             return None
         if isinstance(value, str):
-            return value.encode('utf8')
+            return value
         return str(value)
 
     def convert_to_cache(self, value, record, validate=True):
@@ -1413,7 +1413,7 @@ class Char(_String):
             return None
         # we need to convert the string to a unicode object to be able
         # to evaluate its length (and possibly truncate it) reliably
-        return ustr(value)[:self.size].encode('utf8')
+        return pycompat.to_text(value)[:self.size]
 
     def convert_to_cache(self, value, record, validate=True):
         if value is None or value is False:
@@ -1667,7 +1667,18 @@ class Binary(Field):
         # unicode in some circumstances, hence the str() cast here.
         # This str() coercion will only work for pure ASCII unicode strings,
         # on purpose - non base64 data must be passed as a 8bit byte strings.
-        return psycopg2.Binary(str(value)) if value else None
+        if not value:
+            return None
+        # Detect if the binary content is an SVG for restricting its upload
+        # only to system users.
+        if isinstance(value, str):
+            value = value.encode()
+        if isinstance(value, bytes):
+            return psycopg2.Binary(value)
+        try:
+            return psycopg2.Binary(str(value).encode('ascii'))
+        except UnicodeEncodeError:
+            raise UserError(_("ASCII characters are required for %s in %s") % (value, self.name))
 
     def convert_to_cache(self, value, record, validate=True):
         if isinstance(value, _BINARY):
@@ -1821,12 +1832,7 @@ class Selection(Field):
         return False
 
     def convert_to_column(self, value, record):
-        """ Convert ``value`` from the ``write`` format to the SQL format. """
-        if value is None or value is False:
-            return None
-        if isinstance(value, str):
-            return value.encode('utf8')
-        return str(value)
+        return super(Selection, self).convert_to_column(value, record)
 
 
 class Reference(Selection):

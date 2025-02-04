@@ -276,7 +276,10 @@ actual arch.
         # Sanity checks: the view should not break anything upon rendering!
         # Any exception raised below will cause a transaction rollback.
         for view in self:
-            view_arch = etree.fromstring(encode(view.arch))
+            try:
+                view_arch = etree.fromstring(view.arch)
+            except Exception:
+                raise
             view._valid_inheritance(view_arch)
             view_def = view.read_combined(['arch'])
             view_arch_utf8 = view_def['arch']
@@ -620,7 +623,7 @@ actual arch.
             root_id = source_id
         sql_inherit = self.get_inheriting_views_arch(source_id, model)
         for (specs, view_id) in sql_inherit:
-            specs_tree = etree.fromstring(specs.encode('utf-8'))
+            specs_tree = etree.fromstring(specs)
             if self._context.get('inherit_branding'):
                 self.inherit_branding(specs_tree, view_id, root_id)
             source = self.apply_inheritance_specs(source, specs_tree, view_id)
@@ -658,7 +661,7 @@ actual arch.
 
         # read the view arch
         [view_data] = root.read(fields=fields)
-        view_arch = etree.fromstring(view_data['arch'].encode('utf-8'))
+        view_arch = etree.fromstring(view_data['arch'])
         if not root.inherit_id:
             arch_tree = view_arch
         else:
@@ -907,7 +910,7 @@ actual arch.
                                 not self._context.get(action, True) and is_base_model):
                             node.set(action, 'false')
 
-        arch = etree.tostring(node, encoding="utf-8").replace('\t', '')
+        arch = etree.tostring(node, encoding="unicode").replace('\t', '')
         for k in list(fields.keys()):
             if k not in fields_def:
                 del fields[k]
@@ -1061,7 +1064,7 @@ actual arch.
             request=request, # might be unbound if we're not in an httprequest context
             debug=request.debug if request else False,
             json=json,
-            quote_plus=werkzeug.url_quote_plus,
+            quote_plus=werkzeug.urls.url_quote_plus,
             time=time,
             datetime=datetime,
             relativedelta=relativedelta,

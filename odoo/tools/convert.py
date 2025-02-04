@@ -8,6 +8,8 @@ import os.path
 import re
 import sys
 import time
+import subprocess
+import base64
 
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -15,8 +17,14 @@ from dateutil.relativedelta import relativedelta
 import pytz
 from lxml import etree, builder
 
+try:
+    import jingtrang
+except ImportError:
+    jingtrang = None
+
 import odoo
 import odoo.release
+from . import pycompat
 from . import assertion_report
 from .config import config
 from .misc import file_open, unquote, ustr, SKIPPED_ELEMENT_TYPES
@@ -26,7 +34,7 @@ from odoo import SUPERUSER_ID
 
 _logger = logging.getLogger(__name__)
 
-from .safe_eval import safe_eval as s_eval
+from .safe_eval import safe_eval as s_eval, pytz, time
 safe_eval = lambda expr, ctx={}: s_eval(expr, ctx, nocopy=True)
 
 class ParseError(Exception):
@@ -87,11 +95,11 @@ def _fix_multiple_roots(node):
 def _eval_xml(self, node, env):
     if node.tag in ('field','value'):
         t = node.get('type','char')
-        f_model = node.get('model', '').encode('utf-8')
+        f_model = node.get('model', '')
         if node.get('search'):
-            f_search = node.get("search",'').encode('utf-8')
-            f_use = node.get("use",'id').encode('utf-8')
-            f_name = node.get("name",'').encode('utf-8')
+            f_search = node.get("search",'')
+            f_use = node.get("use",'id')
+            f_name = node.get("name",'')
             idref2 = {}
             if f_search:
                 idref2 = _get_idref(self, env, f_model, self.idref)
@@ -135,9 +143,9 @@ def _eval_xml(self, node, env):
         if t == 'xml':
             _fix_multiple_roots(node)
             return '<?xml version="1.0"?>\n'\
-                +_process("".join([etree.tostring(n, encoding='utf-8') for n in node]))
+                +_process("".join([etree.tostring(n, encoding='unicode') for n in node]))
         if t == 'html':
-            return _process("".join([etree.tostring(n, encoding='utf-8') for n in node]))
+            return _process("".join([etree.tostring(n, encoding='unicode') for n in node]))
 
         data = node.text
         if node.get('file'):
@@ -156,7 +164,7 @@ def _eval_xml(self, node, env):
             return data
 
         if t == 'base64':
-            return data.encode('base64')
+            return base64.b64encode(data)
 
         if t == 'int':
             d = data.strip()
@@ -213,8 +221,8 @@ class xml_import(object):
         return self.noupdate or (len(data_node) and self.nodeattr2bool(data_node, 'noupdate', False))
 
     def get_context(self, data_node, node, eval_dict):
-        data_node_context = (len(data_node) and data_node.get('context','').encode('utf8'))
-        node_context = node.get("context",'').encode('utf8')
+        data_node_context = (len(data_node) and data_node.get('context',''))
+        node_context = node.get("context",'')
         context = {}
         for ctx in (data_node_context, node_context):
             if ctx:
@@ -253,7 +261,7 @@ form: module.record_id""" % (xml_id,)
 
     def _tag_delete(self, rec, data_node=None, mode=None):
         d_model = rec.get("model")
-        d_search = rec.get("search",'').encode('utf-8')
+        d_search = rec.get("search",'')
         d_id = rec.get("id")
         records = self.env[d_model]
 
@@ -284,13 +292,13 @@ form: module.record_id""" % (xml_id,)
     def _tag_report(self, rec, data_node=None, mode=None):
         res = {}
         for dest,f in (('name','string'),('model','model'),('report_name','name')):
-            res[dest] = rec.get(f,'').encode('utf8')
+            res[dest] = rec.get(f,'')
             assert res[dest], "Attribute %s of report is empty !" % (f,)
         for field,dest in (('rml','report_rml'),('file','report_rml'),('xml','report_xml'),('xsl','report_xsl'),
                            ('attachment','attachment'),('attachment_use','attachment_use'), ('usage','usage'),
                            ('report_type', 'report_type'), ('parser', 'parser')):
             if rec.get(field):
-                res[dest] = rec.get(field).encode('utf8')
+                res[dest] = rec.get(field)
         if rec.get('auto'):
             res['auto'] = safe_eval(rec.get('auto','False'))
         if rec.get('sxw'):
@@ -301,7 +309,7 @@ form: module.record_id""" % (xml_id,)
 
         res['multi'] = rec.get('multi') and safe_eval(rec.get('multi','False'))
 
-        xml_id = rec.get('id','').encode('utf8')
+        xml_id = rec.get('id','')
         self._test_xml_id(xml_id)
 
         if rec.get('groups'):
@@ -345,20 +353,20 @@ form: module.record_id""" % (xml_id,)
         return
 
     def _tag_act_window(self, rec, data_node=None, mode=None):
-        name = rec.get('name','').encode('utf-8')
-        xml_id = rec.get('id','').encode('utf8')
+        name = rec.get('name','')
+        xml_id = rec.get('id','')
         self._test_xml_id(xml_id)
-        type = rec.get('type','').encode('utf-8') or 'ir.actions.act_window'
+        type = rec.get('type','') or 'ir.actions.act_window'
         view_id = False
         if rec.get('view_id'):
-            view_id = self.id_get(rec.get('view_id','').encode('utf-8'))
-        domain = rec.get('domain','').encode('utf-8') or '[]'
-        res_model = rec.get('res_model','').encode('utf-8')
-        src_model = rec.get('src_model','').encode('utf-8')
-        view_type = rec.get('view_type','').encode('utf-8') or 'form'
-        view_mode = rec.get('view_mode','').encode('utf-8') or 'tree,form'
-        usage = rec.get('usage','').encode('utf-8')
-        limit = rec.get('limit','').encode('utf-8')
+            view_id = self.id_get(rec.get('view_id',''))
+        domain = rec.get('domain','') or '[]'
+        res_model = rec.get('res_model','')
+        src_model = rec.get('src_model','')
+        view_type = rec.get('view_type','') or 'form'
+        view_mode = rec.get('view_mode','') or 'tree,form'
+        usage = rec.get('usage','')
+        limit = rec.get('limit','')
         uid = self.uid
 
         # Act_window's 'domain' and 'context' contain mostly literals
@@ -444,7 +452,7 @@ form: module.record_id""" % (xml_id,)
             model = src_model
             if isinstance(model, (list, tuple)):
                 model, res_id = model
-            keyword = rec.get('key2','').encode('utf-8') or 'client_action_relate'
+            keyword = rec.get('key2','') or 'client_action_relate'
             value = 'ir.actions.act_window,'+str(id)
             replace = rec.get('replace','') or True
             self.env['ir.values'].set_action(xml_id, action_slot=keyword, model=model, action=value, res_id=res_id)
@@ -460,7 +468,7 @@ form: module.record_id""" % (xml_id,)
             return
         res = {}
         for field in rec.findall('./field'):
-            f_name = field.get("name",'').encode('utf-8')
+            f_name = field.get("name",'')
             f_val = _eval_xml(self, field, self.env)
             res[f_name] = f_val
         ir_values = self.env['ir.values']
@@ -476,7 +484,7 @@ form: module.record_id""" % (xml_id,)
     def _tag_workflow(self, rec, data_node=None, mode=None):
         if self.isnoupdate(data_node) and self.mode != 'init':
             return
-        model = rec.get('model').encode('ascii')
+        model = rec.get('model')
         w_ref = rec.get('ref')
         if w_ref:
             id = self.id_get(w_ref)
@@ -490,10 +498,10 @@ form: module.record_id""" % (xml_id,)
 
         uid = self.get_uid(data_node, rec)
         record = self.env(user=uid)[model].browse(id)
-        record.signal_workflow(rec.get('action').encode('ascii'))
+        record.signal_workflow(rec.get('action'))
 
     def _tag_menuitem(self, rec, data_node=None, mode=None):
-        rec_id = rec.get("id",'').encode('ascii')
+        rec_id = rec.get("id",'')
         self._test_xml_id(rec_id)
 
         # The parent attribute was specified, if non-empty determine its ID, otherwise
@@ -513,7 +521,7 @@ form: module.record_id""" % (xml_id,)
             res = None
 
         if rec.get('action'):
-            a_action = rec.get('action','').encode('utf8')
+            a_action = rec.get('action','')
 
             # determine the type of action
             action_type, action_id = self.model_id_get(a_action)
@@ -566,13 +574,13 @@ form: module.record_id""" % (xml_id,)
         if self.isnoupdate(data_node) and self.mode != 'init':
             return
 
-        rec_model = rec.get("model",'').encode('ascii')
-        rec_id = rec.get("id",'').encode('ascii')
+        rec_model = rec.get("model",'')
+        rec_id = rec.get("id",'')
         self._test_xml_id(rec_id)
-        rec_src = rec.get("search",'').encode('utf8')
+        rec_src = rec.get("search",'')
         rec_src_count = rec.get("count")
 
-        rec_string = rec.get("string",'').encode('utf8') or 'unknown'
+        rec_string = rec.get("string",'') or 'unknown'
 
         records = None
         eval_dict = {'ref': self.id_get}
@@ -605,7 +613,7 @@ form: module.record_id""" % (xml_id,)
             globals_dict['ref'] = ref
             globals_dict['_ref'] = ref
             for test in rec.findall('./test'):
-                f_expr = test.get("expr",'').encode('utf-8')
+                f_expr = test.get("expr",'')
                 env = self.env(user=uid, context=context)
                 expected_value = _eval_xml(self, test, env) or True
                 expression_value = safe_eval(f_expr, globals_dict)
@@ -622,9 +630,9 @@ form: module.record_id""" % (xml_id,)
             self.assertion_report.record_success()
 
     def _tag_record(self, rec, data_node=None, mode=None):
-        rec_model = rec.get("model").encode('ascii')
+        rec_model = rec.get("model")
         model = self.env[rec_model]
-        rec_id = rec.get("id",'').encode('ascii')
+        rec_id = rec.get("id",'')
         rec_context = rec.get("context", {})
         if rec_context:
             rec_context = safe_eval(rec_context)
@@ -665,13 +673,13 @@ form: module.record_id""" % (xml_id,)
         res = {}
         for field in rec.findall('./field'):
             #TODO: most of this code is duplicated above (in _eval_xml)...
-            f_name = field.get("name").encode('utf-8')
-            f_ref = field.get("ref",'').encode('utf-8')
-            f_search = field.get("search",'').encode('utf-8')
-            f_model = field.get("model",'').encode('utf-8')
+            f_name = field.get("name")
+            f_ref = field.get("ref",'')
+            f_search = field.get("search",'')
+            f_model = field.get("model",'')
             if not f_model and f_name in model._fields:
                 f_model = model._fields[f_name].comodel_name
-            f_use = field.get("use",'').encode('utf-8') or 'id'
+            f_use = field.get("use",'') or 'id'
             f_val = False
 
             if f_search:
@@ -714,7 +722,7 @@ form: module.record_id""" % (xml_id,)
 
     def _tag_template(self, el, data_node=None, mode=None):
         # This helper transforms a <template> element into a <record> and forwards it
-        tpl_id = el.get('id', el.get('t-name', '')).encode('ascii')
+        tpl_id = el.get('id', el.get('t-name', ''))
         full_tpl_id = tpl_id
         if '.' not in full_tpl_id:
             full_tpl_id = '%s.%s' % (self.module, tpl_id)
@@ -832,7 +840,7 @@ form: module.record_id""" % (xml_id,)
 def convert_file(cr, module, filename, idref, mode='update', noupdate=False, kind=None, report=None, pathname=None):
     if pathname is None:
         pathname = os.path.join(module, filename)
-    fp = file_open(pathname)
+    fp = file_open(pathname, 'rb')
     ext = os.path.splitext(filename)[1].lower()
 
     try:
@@ -860,32 +868,26 @@ def convert_csv_import(cr, module, fname, csvcontent, idref=None, mode='init',
         quote: "
         delimiter: ,
         encoding: utf-8'''
-    if not idref:
-        idref={}
-    model = ('.'.join(fname.split('.')[:-1]).split('-'))[0]
-    #remove folder path from model
-    head, model = os.path.split(model)
-
-    input = io.StringIO(csvcontent) #FIXME
-    reader = csv.reader(input, quotechar='"', delimiter=',')
+    filename, _ext = os.path.splitext(os.path.basename(fname))
+    model = filename.split('-')[0]
+    reader = pycompat.csv_reader(io.BytesIO(csvcontent), quotechar='"', delimiter=',')
     fields = next(reader)
 
     if not (mode == 'init' or 'id' in fields):
         _logger.error("Import specification does not contain 'id' and we are in init mode, Cannot continue.")
         return
 
-    datas = []
-    for line in reader:
-        if not (line and any(line)):
-            continue
-        try:
-            datas.append(list(map(ustr, line)))
-        except Exception:
-            _logger.error("Cannot import the line: %s", line)
+    # filter out empty lines (any([]) == False) and lines containing only empty cells
+    datas = [
+        line for line in reader
+        if any(line)
+    ]
 
     context = {
         'mode': mode,
         'module': module,
+        'install_module': module,
+        'install_filename': fname,
         'noupdate': noupdate,
     }
     env = odoo.api.Environment(cr, SUPERUSER_ID, context)
@@ -897,21 +899,25 @@ def convert_csv_import(cr, module, fname, csvcontent, idref=None, mode='init',
 
 def convert_xml_import(cr, module, xmlfile, idref=None, mode='init', noupdate=False, report=None):
     doc = etree.parse(xmlfile)
-    relaxng = etree.RelaxNG(
-        etree.parse(os.path.join(config['root_path'],'import_xml.rng' )))
+    schema = os.path.join(config['root_path'], 'import_xml.rng')
+    relaxng = etree.RelaxNG(etree.parse(schema))
     try:
-        relaxng.assertTrue(doc)
+        relaxng.assert_(doc)
     except Exception:
-        _logger.info('The XML file does not fit the required schema !', exc_info=True)
-        _logger.info(ustr(relaxng.error_log.last_error))
+        _logger.exception("The XML file '%s' does not fit the required schema !", xmlfile.name)
+        if jingtrang:
+            p = subprocess.run(['pyjing', schema, xmlfile.name], stdout=subprocess.PIPE)
+            _logger.warning(p.stdout.decode())
+        else:
+            for e in relaxng.error_log:
+                _logger.warning(e)
+            _logger.info("Install 'jingtrang' for more precise and useful validation messages.")
         raise
 
-    if idref is None:
-        idref={}
-    if isinstance(xmlfile, file):
-        xml_filename = xmlfile.name
-    else:
+    if isinstance(xmlfile, str):
         xml_filename = xmlfile
-    obj = xml_import(cr, module, idref, mode, report=report, noupdate=noupdate, xml_filename=xml_filename)
-    obj.parse(doc.getroot(), mode=mode)
+    else:
+        xml_filename = xmlfile.name
+    obj = xml_import(cr, module, idref, mode, noupdate=noupdate, xml_filename=xml_filename)
+    obj.parse(doc.getroot())
     return True
