@@ -197,7 +197,6 @@ class XMLTranslator(object):
 
     def done(self, text):
         self.flush()
-        _logger.info("APPENDING %s" % text)
         self._done.append(text)
 
     def get_done(self):

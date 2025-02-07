@@ -942,7 +942,7 @@ actual arch.
         arch_tree = etree.fromstring(arch)
         self.distribute_branding(arch_tree)
         root = E.templates(arch_tree)
-        arch = etree.tostring(root, encoding='utf-8', xml_declaration=True)
+        arch = etree.tostring(root, encoding='unicode')
         return arch
 
     @api.model

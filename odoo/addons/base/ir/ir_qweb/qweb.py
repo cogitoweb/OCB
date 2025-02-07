@@ -9,7 +9,7 @@ from itertools import count
 from psycopg2.extensions import TransactionRollbackError
 from textwrap import dedent
 import werkzeug
-from werkzeug.utils import escape as _escape
+from odoo.tools.misc import html_escape as escape
 
 from odoo.tools import wrap_values
 
@@ -30,6 +30,17 @@ from odoo.tools.parse_version import parse_version
 unsafe_eval = eval
 
 _logger = logging.getLogger(__name__)
+
+# in Python 2, arguments (within the ast.arguments structure) are expressions
+# (since they can be tuples), generally
+# ast.Name(id: identifyer, ctx=ast.Param()), whereas in Python 3 they are
+# ast.arg(arg: identifier, annotation: expr?) provide a toplevel arg()
+# function which matches ast.arg producing the relevant ast.Name in Python 2.
+arg = getattr(ast, 'arg', lambda arg, annotation: ast.Name(id=arg, ctx=ast.Param()))
+# also Python 3's arguments has grown *2* new mandatory arguments, kwonlyargs
+# and kw_defaults for keyword-only arguments and their default values (if any)
+# so add a shim for *that* based on the signature of Python 3 I guess?
+arguments = ast.arguments
 
 ####################################
 ###          qweb tools          ###
@@ -79,11 +90,14 @@ class Contextifier(ast.NodeTransformer):
         if args.kwarg: names.append(args.kwarg)
         # remap defaults in case there's any
         return ast.copy_location(ast.Lambda(
-            args=ast.arguments(
+            args=arguments(
                 args=args.args,
                 defaults=list(map(self.visit, args.defaults)),
                 vararg=args.vararg,
                 kwarg=args.kwarg,
+                kwonlyargs=[],
+                kw_defaults=[],
+                posonlyargs=[],
             ),
             body=Contextifier(self._safe_names + tuple(names)).visit(node.body)
         ), node)
@@ -152,14 +166,14 @@ class QWebException(Exception):
     def __repr__(self):
         return str(self)
 
-# Avoid DeprecationWarning while still remaining compatible with werkzeug pre-0.9
-escape = (lambda text: _escape(text, quote=True)) if parse_version(getattr(werkzeug, '__version__', '0.0')) < parse_version('0.9.0') else _escape
+# # Avoid DeprecationWarning while still remaining compatible with werkzeug pre-0.9
+# escape = (lambda text: _escape(text, quote=True)) if parse_version(getattr(werkzeug, '__version__', '0.0')) < parse_version('0.9.0') else _escape
 
 def unicodifier(val):
     if val is None or val is False:
         return ''
     if isinstance(val, str):
-        return val.decode('utf-8')
+        return val
     return str(val)
 
 def foreach_iterator(base_ctx, enum, name):
@@ -305,7 +319,7 @@ class QWeb(object):
         try:
             # noinspection PyBroadException
             ns = {}
-            unsafe_eval(compile(astmod, '<template>', 'exec'), ns)
+            unsafe_eval(compile(astor.to_source(astmod), '<template>', 'exec'), ns)
             compiled = ns[def_name]
         except QWebException as e:
             raise e
@@ -318,17 +332,18 @@ class QWeb(object):
 
         def _compiled_fn(self, append, values):
             log = {'last_path_node': None}
-            values = dict(self.default_values(), **values)
-            wrap_values(values)
+            new = self.default_values()
+            new.update(values)
+            wrap_values(new)
             try:
-                return compiled(self, append, values, options, log)
+                return compiled(self, append, new, options, log)
             except (QWebException, TransactionRollbackError) as e:
                 raise e
             except Exception as e:
                 path = log['last_path_node']
                 element, document = self.get_template(template, options)
-                node = element.getroottree().xpath(path)
-                raise QWebException("Error to render compiling AST", e, path, node and etree.tostring(node[0]), name)
+                node = element.getroottree().xpath(path) if ':' not in path else None
+                raise QWebException("Error to render compiling AST", e, path, node and etree.tostring(node[0], encoding='unicode'), name)
 
         return _compiled_fn
 
@@ -508,6 +523,7 @@ class QWeb(object):
         """
         return ast.parse(dedent("""
             from collections import OrderedDict
+            from odoo.tools.pycompat import to_text
             from odoo.addons.base.ir.ir_qweb.qweb import escape, unicodifier, foreach_iterator
             """))
 
@@ -524,13 +540,13 @@ class QWeb(object):
         # def $name(self, append, values, options, log)
         fn = ast.FunctionDef(
             name=name,
-            args=ast.arguments(args=[
-                ast.Name(id='self', ctx=ast.Param()),
-                ast.Name(id='append', ctx=ast.Param()),
-                ast.Name(id='values', ctx=ast.Param()),
-                ast.Name(id='options', ctx=ast.Param()),
-                ast.Name(id='log', ctx=ast.Param()),
-            ], defaults=[], vararg=None, kwarg=None),
+            args=arguments(args=[
+                arg(arg='self', annotation=None),
+                arg(arg='append', annotation=None),
+                arg(arg='values', annotation=None),
+                arg(arg='options', annotation=None),
+                arg(arg='log', annotation=None),
+            ], defaults=[], vararg=None, kwarg=None, posonlyargs=[], kwonlyargs=[], kw_defaults=[]),
             body=body or [ast.Return()],
             decorator_list=[])
         if lineno is not None:
@@ -810,7 +826,7 @@ class QWeb(object):
                 iter=ast.Call(
                     func=ast.Attribute(
                         value=ast.Name(id='t_attrs', ctx=ast.Load()),
-                        attr='iteritems',
+                        attr='items',
                         ctx=ast.Load()
                         ),
                     args=[], keywords=[],
@@ -825,7 +841,7 @@ class QWeb(object):
                                 func=ast.Name(id='isinstance', ctx=ast.Load()),
                                 args=[
                                     ast.Name(id='value', ctx=ast.Load()),
-                                    ast.Name(id='basestring', ctx=ast.Load())
+                                    ast.Name(id='str', ctx=ast.Load())
                                 ],
                                 keywords=[],
                                 starargs=None, kwargs=None
@@ -839,7 +855,7 @@ class QWeb(object):
                         self._append(ast.Call(
                             func=ast.Name(id='escape', ctx=ast.Load()),
                             args=[ast.Call(
-                                func=ast.Name(id='unicodifier', ctx=ast.Load()),
+                                func=ast.Name(id='to_text', ctx=ast.Load()),
                                 args=[ast.Name(id='value', ctx=ast.Load())], keywords=[],
                                 starargs=None, kwargs=None
                             )], keywords=[],
@@ -1042,7 +1058,7 @@ class QWeb(object):
                     value=ast.Call(
                         func=ast.Name(id='escape', ctx=ast.Load()),
                         args=[ast.Call(
-                            func=ast.Name(id='unicodifier', ctx=ast.Load()),
+                            func=ast.Name(id='to_text', ctx=ast.Load()),
                             args=[ast.Name(id='content', ctx=ast.Load())], keywords=[],
                             starargs=None, kwargs=None
                         )],
@@ -1060,7 +1076,8 @@ class QWeb(object):
         return content + self._compile_widget_value(el, options)
 
     # escape attribute is deprecated and will remove after v11
-    def _compile_widget(self, el, expression, field_options, escape=None):
+
+    def _compile_widget(self, el, expression, field_options):
         if field_options:
             return [
                 # value = t-(esc|raw)
@@ -1085,7 +1102,7 @@ class QWeb(object):
                             ast.Name(id='content', ctx=ast.Load()),
                             ast.Str(expression),
                             ast.Str(el.tag),
-                            field_options and self._compile_expr(field_options) or ast.Dict(keys=[], values=[]),
+                            field_options,
                             ast.Name(id='options', ctx=ast.Load()),
                             ast.Name(id='values', ctx=ast.Load()),
                         ],
@@ -1109,7 +1126,7 @@ class QWeb(object):
                         keywords=[], starargs=None, kwargs=None
                     ),
                     self._compile_expr0(expression),
-                    ast.Name(id='None', ctx=ast.Load()),
+                    ast.NameConstant(None),
                 ], ctx=ast.Load())
             )
         ]
@@ -1167,7 +1184,7 @@ class QWeb(object):
         #    display the tag without content
         orelse = [ast.If(
             test=ast.Name(id='force_display', ctx=ast.Load()),
-            body=self._compile_tag(el, [], options, True),
+            body=self._compile_tag(el, [], options, True) or [ast.Pass()],
             orelse=[],
         )]
 
@@ -1195,7 +1212,7 @@ class QWeb(object):
                     targets=[ast.Name(id=default_content, ctx=ast.Store())],
                     value=ast.Call(
                         func=ast.Attribute(
-                            value=ast.Str(''),
+                            value=ast.Str(u''),
                             attr='join',
                             ctx=ast.Load()
                         ),
@@ -1211,13 +1228,13 @@ class QWeb(object):
                 #    display the tag without content
                 ast.If(
                     test=ast.Name(id=default_content, ctx=ast.Load()),
-                    body=self._compile_tag(el, [self._append(ast.Name(id=default_content, ctx=ast.Load()))], options, True),
+                    body=self._compile_tag(el, [self._append(ast.Name(id=default_content, ctx=ast.Load()))], options, True) or [ast.Pass()],
                     orelse=orelse,
                 )
             ]
 
         # if content is not None:
-        #    display the tag (unicodifier(content))
+        #    display the tag (to_text(content))
         # else
         #    if default_content:
         #       display the tag with default content
@@ -1226,7 +1243,7 @@ class QWeb(object):
         return [self._if_content_is_not_Falsy(
             body=self._compile_tag(el, [self._append(
                 ast.Call(
-                    func=ast.Name(id='unicodifier', ctx=ast.Load()),
+                    func=ast.Name(id='to_text', ctx=ast.Load()),
                     args=[ast.Name(id='content', ctx=ast.Load())], keywords=[],
                     starargs=None, kwargs=None
                 )
@@ -1392,7 +1409,7 @@ class QWeb(object):
     def _compile_strexpr(self, expr):
         # ensure result is unicode
         return ast.Call(
-            func=ast.Name(id='unicodifier', ctx=ast.Load()),
+            func=ast.Name(id='to_text', ctx=ast.Load()),
             args=[self._compile_expr(expr)], keywords=[],
             starargs=None, kwargs=None
         )

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import base64
 import os
 import re
 import hashlib
@@ -154,7 +155,7 @@ class AssetsBundle(object):
         We compute a SHA1 on the rendered bundle + max linked files last_modified date
         """
         check = json.dumps(self.files) + ",".join(self.remains) + str(self.last_modified)
-        return hashlib.sha1(check).hexdigest()
+        return hashlib.sha1(check.encode('utf-8')).hexdigest()
 
     def clean_attachments(self, type):
         """ Takes care of deleting any outdated ir.attachment records associated to a bundle before
@@ -215,7 +216,7 @@ class AssetsBundle(object):
             'res_id': False,
             'type': 'binary',
             'public': True,
-            'datas': content.encode('utf8').encode('base64'),
+            'datas': base64.b64encode(content.encode('utf-8')),
         }
         attachment = ira.sudo().create(values)
 
@@ -378,19 +379,19 @@ class AssetsBundle(object):
         source = re.sub(self.rx_preprocess_imports, sanitize, source)
 
         try:
-            compiler = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        except Exception:
+            compiler = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, encoding='utf-8')
+        except Exception as e:
             msg = "Could not execute command %r" % cmd[0]
             _logger.error(msg)
             self.css_errors.append(msg)
             return ''
-        result = compiler.communicate(input=source.encode('utf-8'))
+        result = compiler.communicate(input=source)
         if compiler.returncode:
             error = self.get_preprocessor_error(''.join(result), source=source)
             _logger.warning(error)
             self.css_errors.append(error)
             return ''
-        compiled = result[0].strip().decode('utf8')
+        compiled = result[0].strip()
         return compiled
 
     def get_preprocessor_error(self, stderr, source=None):

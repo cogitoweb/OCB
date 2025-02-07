@@ -5,6 +5,7 @@ from email.utils import formataddr
 
 import re
 import uuid
+import base64
 
 from odoo import _, api, fields, models, modules, tools
 from odoo.exceptions import UserError, AccessError
@@ -62,7 +63,7 @@ class Channel(models.Model):
 
     def _get_default_image(self):
         image_path = modules.get_module_resource('mail', 'static/src/img', 'groupdefault.png')
-        return tools.image_resize_image_big(open(image_path, 'rb').read().encode('base64'))
+        return tools.image_resize_image_big(base64.b64encode(open(image_path, 'rb').read()))
 
     name = fields.Char('Name', required=True, translate=True)
     channel_type = fields.Selection([

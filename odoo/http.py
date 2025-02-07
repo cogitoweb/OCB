@@ -52,7 +52,7 @@ import odoo
 from odoo.service.server import memory_info
 from odoo.service import security, model as service_model
 from odoo.tools.func import lazy_property
-from odoo.tools import ustr, consteq, frozendict
+from odoo.tools import ustr, consteq, frozendict, date_utils
 
 from odoo.modules.module import module_manifest
 
@@ -394,7 +394,7 @@ class WebRequest(object):
         msg = '%s%s' % (token, max_ts)
         secret = self.env['ir.config_parameter'].sudo().get_param('database.secret')
         assert secret, "CSRF protection requires a configured database secret"
-        hm = hmac.new(str(secret), msg, hashlib.sha1).hexdigest()
+        hm = hmac.new(secret.encode('ascii'), msg.encode('utf-8'), hashlib.sha1).hexdigest()
         return '%so%s' % (hm, max_ts)
 
     def validate_csrf(self, csrf):

@@ -57,3 +57,7 @@ class LRU(object):
     @synchronized()
     def clear(self):
         self.d.clear()
+
+    @synchronized()
+    def keys(self):
+        return list(self.d)
