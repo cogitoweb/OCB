@@ -341,7 +341,7 @@ class MailTemplate(models.Model):
 
         html = lxml.html.tostring(root, pretty_print=False, method='html')
         # this is ugly, but lxml/etree tostring want to put everything in a 'div' that breaks the editor -> remove that
-        if html.startswith('<div>') and html.endswith('</div>'):
+        if html.startswith(b'<div>') and html.endswith(b'</div>'):
             html = html[5:-6]
         return html
 

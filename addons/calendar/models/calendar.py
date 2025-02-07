@@ -13,6 +13,7 @@ import pytz
 import re
 import time
 import uuid
+import base64
 
 from odoo import api, fields, models
 from odoo import tools
@@ -25,6 +26,8 @@ _logger = logging.getLogger(__name__)
 
 VIRTUALID_DATETIME_FORMAT = "%Y%m%d%H%M%S"
 
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 def calendar_id2real_id(calendar_id=None, with_date=False):
     """ Convert a "virtual/recurring event id" (type string) into a real event id (type int).
@@ -167,7 +170,7 @@ class Attendee(models.Model):
                 if ics_file:
                     vals['attachment_ids'] = [(0, 0, {'name': 'invitation.ics',
                                                       'datas_fname': 'invitation.ics',
-                                                      'datas': str(ics_file).encode('base64')})]
+                                                      'datas': base64.b64encode(ics_file.encode('utf-8'))})]
                 vals['model'] = None  # We don't want to have the mail in the tchatter while in queue!
                 vals['res_id'] = False
                 current_mail = self.env['mail.mail'].browse(mail_id)
@@ -619,8 +622,8 @@ class Meeting(models.Model):
             }
 
         # formats will be used for str{f,p}time() which do not support unicode in Python 2, coerce to str
-        format_date = lang_params.get("date_format", '%B-%d-%Y').encode('utf-8')
-        format_time = lang_params.get("time_format", '%I-%M %p').encode('utf-8')
+        format_date = lang_params.get("date_format", '%B-%d-%Y')
+        format_time = lang_params.get("time_format", '%I-%M %p')
         return (format_date, format_time)
 
     @api.model

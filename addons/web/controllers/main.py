@@ -193,11 +193,11 @@ def concat_xml(file_list):
 
     :param list(str) file_list: list of files to check
     :returns: (concatenation_result, checksum)
-    :rtype: (str, str)
+    :rtype: (bytes, str)
     """
     checksum = hashlib.new('sha1')
     if not file_list:
-        return '', checksum.hexdigest()
+        return b'', checksum.hexdigest()
 
     root = None
     for fname in file_list:
@@ -205,14 +205,18 @@ def concat_xml(file_list):
             contents = fp.read()
             checksum.update(contents)
             fp.seek(0)
-            xml = ElementTree.parse(fp).getroot()
+            try:
+                xml = ElementTree.parse(fp).getroot()
+            except ElementTree.ParseError as e:
+                _logger.error("Could not parse file %s: %s" % (fname, e.msg))
+                raise e
 
         if root is None:
             root = ElementTree.Element(xml.tag)
         #elif root.tag != xml.tag:
         #    raise ValueError("Root tags missmatch: %r != %r" % (root.tag, xml.tag))
 
-        for child in xml.getchildren():
+        for child in list(xml):
             root.append(child)
     return ElementTree.tostring(root, 'utf-8'), checksum.hexdigest()
 
