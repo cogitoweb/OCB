@@ -10,6 +10,7 @@ import tempfile
 import urllib.request, urllib.error, urllib.parse
 import urllib.parse
 import zipfile
+import base64
 
 from docutils import nodes
 from docutils.core import publish_string
@@ -224,7 +225,7 @@ class Module(models.Model):
                 path = modules.module.get_module_icon(module.name)
             if path:
                 with tools.file_open(path, 'rb') as image_file:
-                    module.icon_image = image_file.read().encode('base64')
+                    module.icon_image = base64.b64encode(image_file.read())
 
     name = fields.Char('Technical Name', readonly=True, required=True, index=True)
     category_id = fields.Many2one('ir.module.category', string='Category', readonly=True, index=True)
