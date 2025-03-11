@@ -1682,7 +1682,7 @@ class Binary(Field):
 
     def convert_to_cache(self, value, record, validate=True):
         if isinstance(value, _BINARY):
-            return str(value)
+            return bytes(value)
         if isinstance(value, int) and \
                 (record._context.get('bin_size') or
                  record._context.get('bin_size_' + self.name)):
