@@ -89,6 +89,8 @@ class ResConfigConfigurable(models.TransientModel):
         """
         return self._next()
 
+    __next__ = next
+
     @api.multi
     def execute(self):
         """ Method called when the user clicks on the ``Next`` button.

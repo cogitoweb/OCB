@@ -4,7 +4,6 @@
 import datetime
 import logging
 import os
-import time
 
 import dateutil
 from pytz import timezone
@@ -14,6 +13,7 @@ from odoo import api, fields, models, tools, workflow, _
 from odoo.exceptions import MissingError, UserError, ValidationError
 from odoo.report.report_sxw import report_sxw, report_rml
 from odoo.tools.safe_eval import safe_eval, test_python_expr
+from odoo.tools.safe_eval import time as safe_time, datetime as safe_datetime, dateutil as safe_dateutil
 from odoo.tools.misc import wrap_module
 
 _logger = logging.getLogger(__name__)
@@ -68,9 +68,9 @@ class IrActions(models.Model):
         return {
             'uid': self._uid,
             'user': self.env.user,
-            'time': time,
-            'datetime': datetime,
-            'dateutil': dateutil,
+            'time': safe_time,
+            'datetime': safe_datetime,
+            'dateutil': safe_dateutil,
             'timezone': timezone,
         }
 

@@ -1102,7 +1102,7 @@ class Meeting(models.Model):
             sort_params = uniq([comp if comp not in ['start', 'start_date', 'start_datetime'] else 'sort_start' for comp in sort_params])
             sort_params = uniq([comp if comp not in ['-start', '-start_date', '-start_datetime'] else '-sort_start' for comp in sort_params])
             comparers = [((itemgetter(col[1:]), -1) if col[0] == '-' else (itemgetter(col), 1)) for col in sort_params]
-            ids = [r['id'] for r in sorted(result_data, cmp=comparer)]
+            ids = [r['id'] for r in sorted(result_data, key=comparer)]
 
         return ids
 
