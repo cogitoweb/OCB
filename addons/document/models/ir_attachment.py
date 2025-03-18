@@ -5,7 +5,7 @@ import pypdf
 import xml.dom.minidom
 import zipfile
 
-from io import StringIO
+import io
 
 from odoo import api, models
 
@@ -41,7 +41,7 @@ class IrAttachment(models.Model):
     def _index_docx(self, bin_data):
         '''Index Microsoft .docx documents'''
         buf = ""
-        f = StringIO(bin_data)
+        f = io.BytesIO(bin_data)
         if zipfile.is_zipfile(f):
             try:
                 zf = zipfile.ZipFile(f)
@@ -57,7 +57,7 @@ class IrAttachment(models.Model):
         '''Index Microsoft .pptx documents'''
 
         buf = ""
-        f = StringIO(bin_data)
+        f = io.BytesIO(bin_data)
         if zipfile.is_zipfile(f):
             try:
                 zf = zipfile.ZipFile(f)
@@ -75,7 +75,7 @@ class IrAttachment(models.Model):
         '''Index Microsoft .xlsx documents'''
 
         buf = ""
-        f = StringIO(bin_data)
+        f = io.BytesIO(bin_data)
         if zipfile.is_zipfile(f):
             try:
                 zf = zipfile.ZipFile(f)
@@ -91,7 +91,7 @@ class IrAttachment(models.Model):
         '''Index OpenDocument documents (.odt, .ods...)'''
 
         buf = ""
-        f = StringIO(bin_data)
+        f = io.BytesIO(bin_data)
         if zipfile.is_zipfile(f):
             try:
                 zf = zipfile.ZipFile(f)
@@ -107,8 +107,8 @@ class IrAttachment(models.Model):
         '''Index PDF documents'''
 
         buf = ""
-        if bin_data.startswith('%PDF-'):
-            f = StringIO(bin_data)
+        if bin_data.startswith(b'%PDF-'):
+            f = io.BytesIO(bin_data)
             try:
                 pdf = pypdf.PdfReader(f)
                 for page in pdf.pages:

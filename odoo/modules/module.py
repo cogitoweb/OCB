@@ -112,7 +112,7 @@ def initialize_sys_path():
     spec = importlib.machinery.ModuleSpec("odoo.addons.base.maintenance", None, is_package=True)
     maintenance_pkg = importlib.util.module_from_spec(spec)
     sys.modules["odoo.addons.base.maintenance"] = maintenance_pkg
-    # hook deprecated module alias from openerp to odoo and "crm"-like to odoo.addons
+    # hook deprecated module alias from odoo to odoo and "crm"-like to odoo.addons
     if not getattr(initialize_sys_path, 'called', False): # only initialize once
         sys.meta_path.insert(0, OdooHook())
         sys.meta_path.insert(0, AddonsHook())
