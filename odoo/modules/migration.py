@@ -118,16 +118,21 @@ class MigrationManager(object):
             """ return a list of migration script files
             """
             m = self.migrations[pkg.name]
+            lst = []
 
-            return sorted(
-                (
-                    f
-                    for k in m
-                    for f in m[k].get(version, [])
-                    if os.path.basename(f).startswith(f"{stage}-")
-                ),
-                key=os.path.basename,
-            )
+            mapping = {
+                'module': opj(pkg.name, 'migrations'),
+                'maintenance': opj('base', 'maintenance', 'migrations', pkg.name),
+            }
+
+            for x in mapping:
+                if version in m.get(x):
+                    for f in m[x][version]:
+                        if not f.startswith(stage + '-'):
+                            continue
+                        lst.append(opj(mapping[x], version, f))
+            lst.sort()
+            return lst
 
         installed_version = getattr(pkg, 'load_version', pkg.installed_version) or ''
         parsed_installed_version = parse_version(installed_version)
