@@ -168,7 +168,7 @@ class MailController(http.Controller):
             'parent_model': subtype.parent_id and subtype.parent_id.res_model or False,
             'id': subtype.id
         } for subtype in subtypes]
-        subtypes_list = sorted(subtypes_list, key=itemgetter('parent_model', 'res_model', 'internal', 'sequence'))
+        subtypes_list = sorted(subtypes_list, key=lambda it: (it['parent_model'] or '', it['res_model'] or '', it['internal'], it['sequence']))
         return subtypes_list
 
     @http.route('/mail/view', type='http', auth='none')
