@@ -1554,7 +1554,7 @@ class Date(Field):
         return super(Date, self).convert_to_column(value or None, record)
 
     def convert_to_cache(self, value, record, validate=True):
-        builtin_datetime: bool = record._context.get('builtin_datetime', True)
+        builtin_datetime: bool = record._context.get('builtin_datetime', False)
         if not value:
             return False
         if isinstance(value, str):
@@ -1637,7 +1637,7 @@ class Datetime(Field):
         return super(Datetime, self).convert_to_column(value or None, record)
 
     def convert_to_cache(self, value, record, validate=True):
-        builtin_datetime: bool = record._context.get('builtin_datetime', True)
+        builtin_datetime: bool = record._context.get('builtin_datetime', False)
         if not value:
             return False
         if isinstance(value, str):
