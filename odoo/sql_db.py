@@ -26,9 +26,9 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 _logger = logging.getLogger(__name__)
 
 types_mapping = {
-    # 'date': (1082,),
-    # 'time': (1083,),
-    # 'datetime': (1114,),
+    'date': (1082,),
+    'time': (1083,),
+    'datetime': (1114,),
 }
 
 def unbuffer(symb, cr):
