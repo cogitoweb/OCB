@@ -1534,30 +1534,41 @@ class Date(Field):
         return (context_today or today).strftime(DATE_FORMAT)
 
     @staticmethod
-    def from_string(value):
+    def from_string(value: str) -> date | None:
         """ Convert an ORM ``value`` into a :class:`date` value. """
         if not value:
             return None
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, date):
+            return value
         value = value[:DATE_LENGTH]
         return datetime.strptime(value, DATE_FORMAT).date()
 
     @staticmethod
-    def to_string(value):
+    def to_string(value: date) -> str:
         """ Convert a :class:`date` value into the format expected by the ORM. """
-        return value.strftime(DATE_FORMAT) if value else False
+        return value.strftime(DATE_FORMAT) if value else ''
 
     def convert_to_column(self, value, record):
         return super(Date, self).convert_to_column(value or None, record)
 
     def convert_to_cache(self, value, record, validate=True):
+        builtin_datetime: bool = record._context.get('builtin_datetime', True)
         if not value:
             return False
         if isinstance(value, str):
             if validate:
                 # force parsing for validation
                 self.from_string(value)
-            return value[:DATE_LENGTH]
-        return self.to_string(value)
+            if not builtin_datetime:
+                return value[:DATE_LENGTH]
+            else:
+                return self.from_string(value)
+        if not builtin_datetime:
+            return self.to_string(value)
+        else:
+            return value
 
     def convert_to_export(self, value, record):
         if not value:
@@ -1604,35 +1615,46 @@ class Datetime(Field):
         return utc_timestamp
 
     @staticmethod
-    def from_string(value):
+    def from_string(value: str) -> datetime | None:
         """ Convert an ORM ``value`` into a :class:`datetime` value. """
         if not value:
             return None
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, date):
+            return datetime(year=value.year, month=value.month, day=value.month)
         value = value[:DATETIME_LENGTH]
         if len(value) == DATE_LENGTH:
             value += " 00:00:00"
         return datetime.strptime(value, DATETIME_FORMAT)
 
     @staticmethod
-    def to_string(value):
+    def to_string(value: datetime) -> str:
         """ Convert a :class:`datetime` value into the format expected by the ORM. """
-        return value.strftime(DATETIME_FORMAT) if value else False
+        return value.strftime(DATETIME_FORMAT) if value else ''
 
     def convert_to_column(self, value, record):
         return super(Datetime, self).convert_to_column(value or None, record)
 
     def convert_to_cache(self, value, record, validate=True):
+        builtin_datetime: bool = record._context.get('builtin_datetime', True)
         if not value:
             return False
         if isinstance(value, str):
             if validate:
                 # force parsing for validation
                 self.from_string(value)
-            value = value[:DATETIME_LENGTH]
-            if len(value) == DATE_LENGTH:
-                value += " 00:00:00"
+            if not builtin_datetime:
+                value = value[:DATETIME_LENGTH]
+                if len(value) == DATE_LENGTH:
+                    value += " 00:00:00"
+            else:
+                value = self.from_string(value)
             return value
-        return self.to_string(value)
+        if not builtin_datetime:
+            return self.to_string(value)
+        else:
+            return value
 
     def convert_to_export(self, value, record):
         if not value:
