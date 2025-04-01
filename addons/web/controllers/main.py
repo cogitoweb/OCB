@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+import io
 import babel.messages.pofile
 import base64
 import csv
@@ -1145,8 +1146,8 @@ class Binary(http.Controller):
                                    """, (uid,))
                     row = cr.fetchone()
                     if row and row[0]:
-                        image_base64 = str(row[0]).decode('base64')
-                        image_data = StringIO(image_base64)
+                        image_base64 = base64.b64decode(row[0])
+                        image_data = io.BytesIO(image_base64)
                         imgext = '.' + (imghdr.what(None, h=image_base64) or 'png')
                         response = http.send_file(image_data, filename=imgname + imgext, mtime=row[1])
                     else:
