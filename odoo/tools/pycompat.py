@@ -6,7 +6,13 @@ import io
 
 _reader = codecs.getreader('utf-8')
 _writer = codecs.getwriter('utf-8')
+text_type = str
+string_types = (str,)
+imap = map
+izip = zip
+ifilter = filter
 
+PY2 = False
 
 def csv_reader(stream, **params):
     assert not isinstance(stream, io.TextIOBase),\
