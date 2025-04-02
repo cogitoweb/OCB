@@ -344,7 +344,7 @@ class Report(models.Model):
 
     @api.model
     def _attachment_filename(self, records, report):
-        return dict((record.id, safe_eval(report.attachment, {'object': record, 'time': time})) for record in records)
+        return dict((record.id, safe_eval(report.attachment, {'object': record})) for record in records)
 
     @api.model
     def _attachment_stored(self, records, report, filenames=None):
