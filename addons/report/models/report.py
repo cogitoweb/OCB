@@ -326,7 +326,7 @@ class Report(models.Model):
                     if attachment:
                         # Add the loaded pdf in the loaded_documents list
                         pdf = attachment.datas
-                        pdf = base64.decodestring(pdf)
+                        pdf = base64.b64decode(pdf)
                         save_in_attachment['loaded_documents'][record_id] = pdf
                         _logger.info('The PDF document %s was loaded from the database' % filename)
 
@@ -426,20 +426,20 @@ class Report(models.Model):
             if headers:
                 head_file_fd, head_file_path = tempfile.mkstemp(suffix='.html', prefix='report.header.tmp.')
                 temporary_files.append(head_file_path)
-                with closing(os.fdopen(head_file_fd, 'w')) as head_file:
+                with closing(os.fdopen(head_file_fd, 'wb')) as head_file:
                     head_file.write(headers[index])
                 local_command_args.extend(['--header-html', head_file_path])
             if footers:
                 foot_file_fd, foot_file_path = tempfile.mkstemp(suffix='.html', prefix='report.footer.tmp.')
                 temporary_files.append(foot_file_path)
-                with closing(os.fdopen(foot_file_fd, 'w')) as foot_file:
+                with closing(os.fdopen(foot_file_fd, 'wb')) as foot_file:
                     foot_file.write(footers[index])
                 local_command_args.extend(['--footer-html', foot_file_path])
 
             # Body stuff
             content_file_fd, content_file_path = tempfile.mkstemp(suffix='.html', prefix='report.body.tmp.')
             temporary_files.append(content_file_path)
-            with closing(os.fdopen(content_file_fd, 'w')) as content_file:
+            with closing(os.fdopen(content_file_fd, 'wb')) as content_file:
                 content_file.write(reporthtml[1])
 
             try:
@@ -460,7 +460,7 @@ class Report(models.Model):
                     with open(pdfreport_path, 'rb') as pdfreport:
                         attachment = {
                             'name': save_in_attachment.get(reporthtml[0]),
-                            'datas': base64.encodestring(pdfreport.read()),
+                            'datas': base64.encodebytes(pdfreport.read()),
                             'datas_fname': save_in_attachment.get(reporthtml[0]),
                             'res_model': save_in_attachment.get('model'),
                             'res_id': reporthtml[0],
