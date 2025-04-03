@@ -131,7 +131,7 @@ def _check_report(report_id):
             else:
                 res2 = result['result']
         if res2:
-            res['result'] = base64.encodestring(res2)
+            res['result'] = base64.b64encode(res2)
         res['format'] = result['format']
         del self_reports[report_id]
     return res
