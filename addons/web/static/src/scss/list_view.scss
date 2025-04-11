@@ -253,3 +253,13 @@
         }
     }
 }
+
+//tree decoration-xxxxxxx extension to add decoration-hidden option
+tr.text-hidden {
+  display: none;
+}
+//tree decoration-xxxxxxx extension to add decoration-cgt-green option
+tr.text-cgt-green {
+  color: #93c841;
+  font-weight: bold;
+}

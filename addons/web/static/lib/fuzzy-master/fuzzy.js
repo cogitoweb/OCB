@@ -50,32 +50,57 @@ fuzzy.match = function(pattern, string, opts) {
     , compareString =  opts.caseSensitive && string || string.toLowerCase()
     , ch, compareChar;
 
+  var orig_pattern = '';
   pattern = opts.caseSensitive && pattern || pattern.toLowerCase();
 
   // For each character in the string, either add it to the result
   // or wrap in template if it's the next string in the pattern
-  for(var idx = 0; idx < len; idx++) {
-    ch = string[idx];
-    if(compareString[idx] === pattern[patternIdx]) {
-      if (pattern[patternIdx] === ' ') {
-        // we don't want a space character to accumulate a larger score
-        currScore = 1 - idx/200;
-      } else {
-        // consecutive characters should increase the score more than linearly
-        currScore += 1 + currScore - idx/200;
-      }
 
-      ch = pre + ch + post;
-      patternIdx += 1;
-    } else {
-      currScore = 0;
+  if(opts.matchWord) { // CGT add option to match full word
+    var match_pos = compareString.indexOf(pattern);
+    if(match_pos > -1) {
+      currScore = 1;
+
+      orig_pattern = string.substring(match_pos, match_pos+pattern.length);
+      ch = pre + orig_pattern  + post;
+      currScore = 1;
+      totalScore += currScore;
+      patternIdx = pattern.length;
+
+      if(match_pos > 0) {
+        result[result.length] = string.substring(0, match_pos);
+      }
+      result[result.length] = ch;
+      if(match_pos + orig_pattern.length < string.length) {
+        result[result.length] = string.substring(match_pos + orig_pattern.length, string.length);
+      }
     }
-    totalScore += currScore;
-    if (compareString[idx] === ' ') {
-      // we don't want characters after a space to accumulate a larger score
-      currScore = 0;
+  }
+  else 
+  {
+    for(var idx = 0; idx < len; idx++) {
+      ch = string[idx];
+      if(compareString[idx] === pattern[patternIdx]) {
+        if (pattern[patternIdx] === ' ') {
+          // we don't want a space character to accumulate a larger score
+          currScore = 1 - idx/200;
+        } else {
+          // consecutive characters should increase the score more than linearly
+          currScore += 1 + currScore - idx/200;
+        }
+
+        ch = pre + ch + post;
+        patternIdx += 1;
+      } else {
+        currScore = 0;
+      }
+      totalScore += currScore;
+      if (compareString[idx] === ' ') {
+        // we don't want characters after a space to accumulate a larger score
+        currScore = 0;
+      }
+      result[result.length] = ch;
     }
-    result[result.length] = ch;
   }
 
   // return rendered string if we have a match for every char

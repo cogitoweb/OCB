@@ -20,7 +20,9 @@ var DECORATIONS = [
     'decoration-muted',
     'decoration-primary',
     'decoration-success',
-    'decoration-warning'
+    'decoration-warning',
+    'decoration-hidden',
+    'decoration-cgt-green'
 ];
 
 var FIELD_CLASSES = {
