@@ -2521,6 +2521,23 @@ class Serialized(Field):
         return value if isinstance(value, dict) else json.loads(value)
 
 
+class Json(Field):
+    """ Json fields provide the storage for json objects. """
+    type = 'json'
+    _slots = {
+        'prefetch': False,  # not prefetched by default
+    }
+    column_type = ('jsonb', 'jsonb')
+
+    def convert_to_column(self, value, record):
+        return json.dumps(value)
+
+    def convert_to_cache(self, value, record, validate=True):
+        # cache format: dict
+        value = value or {}
+        return value if isinstance(value, dict) else json.loads(value)
+
+
 class Id(Field):
     """ Special case for field 'id'. """
     type = 'integer'
