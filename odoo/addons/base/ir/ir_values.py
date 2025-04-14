@@ -178,7 +178,6 @@ class IrValues(models.Model):
         return super(IrValues, self).unlink()
 
     @api.model
-    @api.returns('self', lambda value: value.id)
     def set_default(self, model, field_name, value, for_all_users=True, company_id=False, condition=False):
         """Defines a default value for the given model and field_name. Any previous
            default for the same scope (model, field_name, value, for_all_users, company_id, condition)
@@ -213,6 +212,7 @@ class IrValues(models.Model):
                                     match)
            :return: the newly created ir.values entry
         """
+        return self.env['ir.settings'].set_default(model, field_name, value)
         if isinstance(value, str):
             value = value
         if company_id is True:
@@ -245,6 +245,7 @@ class IrValues(models.Model):
         """ Return the default value defined for model, field_name, users, company and condition.
             Return ``None`` if no such default exists.
         """
+        return self.env['ir.settings'].get_default(model, field_name)
         search_criteria = [
             ('key', '=', 'default'),
             ('key2', '=', condition and condition[:200]),
@@ -284,6 +285,7 @@ class IrValues(models.Model):
            :return: list of default values tuples of the form ``(id, field_name, value)``
                     (``id`` is the ID of the default entry, usually irrelevant)
         """
+        return self.env['ir.settings'].get_defaults(model, condition)
         # use a direct SQL query for performance reasons,
         # this is called very often
         query = """ SELECT v.id, v.name, v.value FROM ir_values v
@@ -318,6 +320,7 @@ class IrValues(models.Model):
             default value. This method simply improves the returned value of
             :meth:`~.get_defaults`.
         """
+        return self.env['ir.settings'].get_defaults_dict(model, condition)
         return dict((f, v) for i, f, v in self.get_defaults(model, condition))
 
     @api.model
