@@ -3,6 +3,7 @@
 
 from . import ir_model
 from . import ir_sequence
+from . import ir_settings
 from . import ir_needaction
 from . import ir_ui_menu
 from . import ir_ui_view

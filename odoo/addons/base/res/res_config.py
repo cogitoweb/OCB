@@ -487,14 +487,14 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
 
     @api.model
     def default_get(self, fields):
-        IrValues = self.env['ir.values']
+        IrSettings = self.env['ir.settings']
         classified = self._get_classified_fields()
 
         res = super(ResConfigSettings, self).default_get(fields)
 
         # defaults: take the corresponding default value they set
         for name, model, field in classified['default']:
-            value = IrValues.get_default(model, field)
+            value = IrSettings.get_default(model, field)
             if value is not None:
                 res[name] = value
 
@@ -527,7 +527,7 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
         classified = self._get_classified_fields()
 
         # default values fields
-        IrValues = self.env['ir.values'].sudo()
+        IrSettings = self.env['ir.settings'].sudo()
         for name, model, field in classified['default']:
             if isinstance(self[name], models.BaseModel):
                 if self._fields[name].type == 'many2one':
@@ -536,7 +536,7 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
                     value = self[name].ids
             else:
                 value = self[name]
-            IrValues.set_default(model, field, value)
+            IrSettings.set_default(model, field, value)
 
         # group fields: modify group / implied groups
         with self.env.norecompute():
