@@ -63,4 +63,4 @@ class IrSettings(models.Model):
     @api.model
     @tools.ormcache('self._uid', 'model')
     def get_defaults_dict(self, model, condition=False):
-        return dict((f, v) for i, f, v in self.get_defaults(model, condition))
+        return dict((f, v) for f, v in self.get_defaults(model, condition))
