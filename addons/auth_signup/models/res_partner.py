@@ -3,6 +3,7 @@
 
 import random
 import werkzeug
+from werkzeug.urls import url_encode
 
 from datetime import datetime, timedelta
 from urllib.parse import urljoin
@@ -91,9 +92,9 @@ class ResPartner(models.Model):
                 fragment['res_id'] = res_id
 
             if fragment:
-                query['redirect'] = base + werkzeug.url_encode(fragment)
+                query['redirect'] = base + url_encode(fragment)
 
-            res[partner.id] = urljoin(base_url, "/web/%s?%s" % (route, werkzeug.url_encode(query)))
+            res[partner.id] = urljoin(base_url, "/web/%s?%s" % (route, url_encode(query)))
         return res
 
     @api.multi
