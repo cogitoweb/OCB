@@ -351,7 +351,7 @@ class HrExpense(models.Model):
         # of the product to encode on the expense. If not, take the default product instead
         # which is 'Fixed Cost'
         default_product = self.env.ref('hr_expense.product_product_fixed_cost')
-        pattern = '\[([^)]*)\]'
+        pattern = r'\[([^)]*)\]'
         product_code = re.search(pattern, expense_description)
         if product_code is None:
             product = default_product
@@ -361,7 +361,7 @@ class HrExpense(models.Model):
             product = products.filtered(lambda p: p.default_code == product_code.group(1)) or products[0]
         account = product.product_tmpl_id._get_product_accounts()['expense']
 
-        pattern = '[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
+        pattern = r'[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
         # Match the last occurence of a float in the string
         # Example: '[foo] 50.3 bar 34.5' becomes '34.5'. This is potentially the price
         # to encode on the expense. If not, take 1.0 instead

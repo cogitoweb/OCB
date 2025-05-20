@@ -1053,7 +1053,7 @@ class MailThread(models.AbstractModel):
         if bounce_alias and bounce_alias in email_to_localpart:
             # Bounce regex: typical form of bounce is bounce_alias+128-crm.lead-34@domain
             # group(1) = the mail ID; group(2) = the model (if any); group(3) = the record ID
-            bounce_re = re.compile("%s\+(\d+)-?([\w.]+)?-?(\d+)?" % re.escape(bounce_alias), re.UNICODE)
+            bounce_re = re.compile("%s\\+(\\d+)-?([\\w.]+)?-?(\\d+)?" % re.escape(bounce_alias), re.UNICODE)
             bounce_match = bounce_re.search(email_to)
 
             if bounce_match:

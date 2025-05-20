@@ -545,7 +545,7 @@ class Meeting(models.Model):
             reference_date = self.start
 
         def todate(date):
-            val = parser.parse(''.join((re.compile('\d')).findall(date)))
+            val = parser.parse(''.join((re.compile('\\d')).findall(date)))
             ## Dates are localized to saved timezone if any, else current timezone.
             if not val.tzinfo:
                 val = pytz.UTC.localize(val)
@@ -1136,7 +1136,7 @@ class Meeting(models.Model):
             return ''
 
         def get_end_date():
-            end_date_new = ''.join((re.compile('\d')).findall(self.final_date)) + 'T235959Z' if self.final_date else False
+            end_date_new = ''.join((re.compile('\\d')).findall(self.final_date)) + 'T235959Z' if self.final_date else False
             return (self.end_type == 'count' and (';COUNT=' + str(self.count)) or '') +\
                 ((end_date_new and self.end_type == 'end_date' and (';UNTIL=' + end_date_new)) or '')
 

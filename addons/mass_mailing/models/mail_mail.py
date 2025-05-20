@@ -73,7 +73,7 @@ class MailMail(models.Model):
         # resolve relative image url to absolute for outlook.com
         def _sub_relative2absolute(match):
             return match.group(1) + urllib.parse.urljoin(domain, match.group(2))
-        body = re.sub('(<img(?=\s)[^>]*\ssrc=")(/[^/][^"]+)', _sub_relative2absolute, body)
+        body = re.sub(r'(<img(?=\s)[^>]*\ssrc=")(/[^/][^"]+)', _sub_relative2absolute, body)
         body = re.sub(r'(<[^>]+\bstyle="[^"]+\burl\(\'?)(/[^/\'][^\'")]+)', _sub_relative2absolute, body)
 
         # generate tracking URL

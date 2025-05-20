@@ -51,16 +51,16 @@ class BarcodeNomenclature(models.Model):
 
     # returns true if the barcode is a valid EAN barcode
     def check_ean(self, ean):
-       return re.match("^\d+$", ean) and self.ean_checksum(ean) == int(ean[-1])
+       return re.match("^\\d+$", ean) and self.ean_checksum(ean) == int(ean[-1])
 
     # returns true if the barcode string is encoded with the provided encoding.
     def check_encoding(self, barcode, encoding):
         if encoding == 'ean13':
-            return len(barcode) == 13 and re.match("^\d+$", barcode) and self.ean_checksum(barcode) == int(barcode[-1]) 
+            return len(barcode) == 13 and re.match("^\\d+$", barcode) and self.ean_checksum(barcode) == int(barcode[-1])
         elif encoding == 'ean8':
-            return len(barcode) == 8 and re.match("^\d+$", barcode) and self.ean8_checksum(barcode) == int(barcode[-1])
+            return len(barcode) == 8 and re.match("^\\d+$", barcode) and self.ean8_checksum(barcode) == int(barcode[-1])
         elif encoding == 'upca':
-            return len(barcode) == 12 and re.match("^\d+$", barcode) and self.ean_checksum("0"+barcode) == int(barcode[-1])
+            return len(barcode) == 12 and re.match("^\\d+$", barcode) and self.ean_checksum("0"+barcode) == int(barcode[-1])
         elif encoding == 'any':
             return True
         else:
@@ -90,7 +90,7 @@ class BarcodeNomenclature(models.Model):
             "match": False,
         }
 
-        barcode = barcode.replace("\\", "\\\\").replace("{", '\{').replace("}", "\}").replace(".", "\.")
+        barcode = barcode.replace("\\", "\\\\").replace("{", '\\{').replace("}", "\\}").replace(".", "\\.")
         numerical_content = re.search("[{][N]*[D]*[}]", pattern) # look for numerical content in pattern
 
         if numerical_content: # the pattern encodes a numerical content
@@ -107,7 +107,7 @@ class BarcodeNomenclature(models.Model):
             match['value'] = int(whole_part) + float(decimal_part)
 
             match['base_code'] = barcode[:num_start] + (num_end-num_start-2)*"0" + barcode[num_end-2:] # replace numerical content by 0's in barcode
-            match['base_code'] = match['base_code'].replace("\\\\", "\\").replace("\{", "{").replace("\}","}").replace("\.",".")
+            match['base_code'] = match['base_code'].replace("\\\\", "\\").replace("\\{", "{").replace("\\}","}").replace("\\.",".")
             pattern = pattern[:num_start] + (num_end-num_start-2)*"0" + pattern[num_end:] # replace numerical content by 0's in pattern to match
 
         match['match'] = re.match(pattern, match['base_code'][:len(pattern)])
@@ -116,18 +116,18 @@ class BarcodeNomenclature(models.Model):
 
     # Attempts to interpret an barcode (string encoding a barcode)
     # It will return an object containing various information about the barcode.
-    # most importantly : 
+    # most importantly :
     #  - code    : the barcode
-    #  - type   : the type of the barcode: 
+    #  - type   : the type of the barcode:
     #  - value  : if the id encodes a numerical value, it will be put there
     #  - base_code : the barcode code with all the encoding parts set to zero; the one put on
     #                the product in the backend
     def parse_barcode(self, barcode):
         parsed_result = {
-            'encoding': '', 
-            'type': 'error', 
-            'code': barcode, 
-            'base_code': barcode, 
+            'encoding': '',
+            'type': 'error',
+            'code': barcode,
+            'base_code': barcode,
             'value': 0,
         }
 
@@ -189,9 +189,9 @@ class BarcodeRule(models.Model):
     @api.one
     @api.constrains('pattern')
     def _check_pattern(self):
-        p = self.pattern.replace("\\\\", "X").replace("\{", "X").replace("\}", "X")
+        p = self.pattern.replace("\\\\", "X").replace("\\{", "X").replace("\\}", "X")
         findall = re.findall("[{]|[}]", p) # p does not contain escaped { or }
-        if len(findall) == 2: 
+        if len(findall) == 2:
             if not re.search("[{][N]*[D]*[}]", p):
                 raise ValidationError(_("There is a syntax error in the barcode pattern ") + self.pattern + _(": braces can only contain N's followed by D's."))
             elif re.search("[{][}]", p):

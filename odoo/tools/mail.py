@@ -41,7 +41,7 @@ safe_attrs = defs.safe_attrs | frozenset(
 
 class _Cleaner(clean.Cleaner):
 
-    _style_re = re.compile('''([\w-]+)\s*:\s*((?:[^;"']|"[^"]*"|'[^']*')+)''')
+    _style_re = re.compile(r'''([\w-]+)\s*:\s*((?:[^;"']|"[^"]*"|'[^']*')+)''')
 
     _style_whitelist = [
         'font-size', 'font-family', 'font-weight',
@@ -316,7 +316,7 @@ def html2plaintext(html, body_id=None, encoding='utf-8'):
     html = html.replace('<em>', '/').replace('</em>', '/')
     html = html.replace('<tr>', '\n')
     html = html.replace('</p>', '\n')
-    html = re.sub('<br\s*/?>', '\n', html)
+    html = re.sub(r'<br\s*/?>', '\n', html)
     html = re.sub('<.*?>', ' ', html)
     html = html.replace(' ' * 2, ' ')
     html = html.replace('&gt;', '>')
@@ -422,7 +422,7 @@ command_re = re.compile("^Set-([a-z]+) *: *(.+)$", re.I + re.UNICODE)
 # Updated in 7.0 to match the model name as well
 # Typical form of references is <timestamp-openerp-record_id-model_name@domain>
 # group(1) = the record ID ; group(2) = the model (if any) ; group(3) = the domain
-reference_re = re.compile("<.*-open(?:object|erp)-(\\d+)(?:-([\w.]+))?[^>]*@([^>]*)>", re.UNICODE)
+reference_re = re.compile(r"<.*-open(?:object|erp)-(\\d+)(?:-([\w.]+))?[^>]*@([^>]*)>", re.UNICODE)
 discussion_re = re.compile("<.*-open(?:object|erp)-private[^>]*@([^>]*)>", re.UNICODE)
 
 mail_header_msgid_re = re.compile('<[^<>]+>')

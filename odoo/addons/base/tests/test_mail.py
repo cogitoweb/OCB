@@ -68,7 +68,7 @@ class TestSanitizer(unittest.TestCase):
             ("<DIV STYLE=\"background-image: url(&#1;javascript:alert('XSS'))\">"),  # div background + extra characters
             ("<IMG SRC='vbscript:msgbox(\"XSS\")'>"),  # VBscrip in an image
             ("<BODY ONLOAD=alert('XSS')>"),  # event handler
-            ("<BR SIZE=\"&{alert('XSS')}\>"),  # & javascript includes
+            ("<BR SIZE=\"&{alert('XSS')}\""),  # & javascript includes
             ("<LINK REL=\"stylesheet\" HREF=\"javascript:alert('XSS');\">"),  # style sheet
             ("<LINK REL=\"stylesheet\" HREF=\"http://ha.ckers.org/xss.css\">"),  # remote style sheet
             ("<STYLE>@import'http://ha.ckers.org/xss.css';</STYLE>"),  # remote style sheet 2
@@ -118,9 +118,9 @@ class TestSanitizer(unittest.TestCase):
                 ['background-color:red', 'Coin coin'],
                 ['position', 'top', 'left']
             ), (
-                """<div style='before: "Email Address; coincoin cheval: lapin";  
+                """<div style='before: "Email Address; coincoin cheval: lapin";
    font-size: 30px; max-width: 100%; after: "Not sure
-    
+
           this; means: anything ?#ùµ"
     ; some-property: 2px; top: 3'>youplaboum</div>""",
                 ['font-size:30px', 'youplaboum'],

@@ -488,7 +488,7 @@ def _collapse_whitespace(text):
     """ Collapses sequences of whitespace characters in ``text`` to a single
     space
     """
-    return re.sub('\s+', ' ', text)
+    return re.sub('\\s+', ' ', text)
 
 
 def _realize_padding(it):

@@ -700,7 +700,7 @@ def trans_parse_rml(de):
         for m in n:
             if isinstance(m, SKIPPED_ELEMENT_TYPES) or not m.text:
                 continue
-            string_list = [s.replace('\n', ' ').strip() for s in re.split('\[\[.+?\]\]', m.text)]
+            string_list = [s.replace('\n', ' ').strip() for s in re.split(r'\[\[.+?\]\]', m.text)]
             for s in string_list:
                 if s:
                     res.append(s.encode("utf8"))
@@ -903,7 +903,7 @@ def trans_generate(lang, modules, cr):
             constraints = getattr(cls, '_local_' + cons_type, [])
             for constraint in constraints:
                 push_constraint_msg(module, term_type, model._name, constraint[msg_pos])
-            
+
     cr.execute(query_models, query_param)
 
     for (_, model, module) in cr.fetchall():

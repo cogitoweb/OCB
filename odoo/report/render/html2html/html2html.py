@@ -10,8 +10,8 @@ from reportlab.lib.utils import ImageReader
 
 from odoo.report.render.rml2pdf import utils
 
-_regex = re.compile('\[\[(.+?)\]\]')
-utils._regex = re.compile('\[\[\s*(.+?)\s*\]\]',re.DOTALL)
+_regex = re.compile(r'\[\[(.+?)\]\]')
+utils._regex = re.compile(r'\[\[\s*(.+?)\s*\]\]',re.DOTALL)
 class html2html(object):
     def __init__(self, html, localcontext):
         self.localcontext = localcontext
@@ -54,7 +54,7 @@ class html2html(object):
             self._node.remove(n)
         process_text(self.etree, self._node)
         return self._node
-        
+
     def url_modify(self,root):
         for n in root:
             if (n.text.find('<a ')>=0 or n.text.find('&lt;a')>=0) and n.text.find('href')>=0 and n.text.find('style')<=0 :

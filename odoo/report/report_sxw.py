@@ -180,7 +180,7 @@ class rml_parse(object):
                 obj._field.type == 'float' and\
                 obj._field.digits):
                 d = obj._field.digits[1]
-                if not d and d is not 0:
+                if not d and d != 0:
                     d = DEFAULT_DIGITS
         return d
 

@@ -374,7 +374,7 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
             The attribute 'group' may contain several xml ids, separated by commas.
 
         *   For a selection field like 'group_XXX' composed of 2 integers values ('0' and '1'),
-            ``execute`` adds/removes 'implied_group' to/from the implied groups of 'group', 
+            ``execute`` adds/removes 'implied_group' to/from the implied groups of 'group',
             depending on the field's value.
             By default 'group' is the group Employee.  Groups are given by their xml id.
             The attribute 'group' may contain several xml ids, separated by commas.
@@ -382,8 +382,8 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
         *   For a boolean field like 'module_XXX', ``execute`` triggers the immediate
             installation of the module named 'XXX' if the field has value ``True``.
 
-        *   For a selection field like 'module_XXX' composed of 2 integers values ('0' and '1'), 
-            ``execute`` triggers the immediate installation of the module named 'XXX' 
+        *   For a selection field like 'module_XXX' composed of 2 integers values ('0' and '1'),
+            ``execute`` triggers the immediate installation of the module named 'XXX'
             if the field has the integer value ``1``.
 
         *   For the other fields, the method ``execute`` invokes all methods with a name
@@ -652,7 +652,7 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
         What if there is another substitution in the message already?
         -------------------------------------------------------------
         You could have a situation where the error message you want to upgrade already contains a substitution. Example:
-            Cannot find any account journal of %s type for this company.\n\nYou can create one in the menu: \nConfiguration\Journals\Journals.
+            Cannot find any account journal of %s type for this company.\n\nYou can create one in the menu: \nConfiguration/Journals/Journals.
         What you want to do here is simply to replace the path by %menu:account.menu_account_config)s, and leave the rest alone.
         In order to do that, you can use the double percent (%%) to escape your new substitution, like so:
             Cannot find any account journal of %s type for this company.\n\nYou can create one in the %%(menu:account.menu_account_config)s.

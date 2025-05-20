@@ -411,7 +411,7 @@ class GoogleCalendar(models.AbstractModel):
         attendee_record = self.env['calendar.attendee'].search([('partner_id', '=', partner_id), ('event_id', '=', res)])
         attendee_record.with_context(context_tmp).write({'oe_synchro_date': meeting.oe_update_date, 'google_internal_event_id': event.GG.event['id']})
         if meeting.recurrency:
-            attendees = self.env['calendar.attendee'].sudo().search([('google_internal_event_id', '=ilike', '%s\_%%' % event.GG.event['id'])])
+            attendees = self.env['calendar.attendee'].sudo().search([('google_internal_event_id', '=ilike', r'%s\_%%' % event.GG.event['id'])])
             excluded_recurrent_event_ids = set(attendee.event_id for attendee in attendees)
             for event in excluded_recurrent_event_ids:
                 event.write({'recurrent_id': meeting.id, 'recurrent_id_date': event.start, 'user_id': meeting.user_id.id})

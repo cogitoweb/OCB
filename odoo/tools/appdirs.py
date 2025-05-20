@@ -100,9 +100,9 @@ def site_data_dir(appname=None, appauthor=None, version=None, multipath=False):
     Typical user data directories are:
         Mac OS X:   /Library/Application Support/<AppName>
         Unix:       /usr/local/share/<AppName> or /usr/share/<AppName>
-        Win XP:     C:\Documents and Settings\All Users\Application Data\<AppAuthor>\<AppName>
-        Vista:      (Fail! "C:\ProgramData" is a hidden *system* directory on Vista.)
-        Win 7:      C:\ProgramData\<AppAuthor>\<AppName>   # Hidden, but writeable on Win 7.
+        Win XP:     C:\\Documents and Settings\\All Users\\Application Data\\<AppAuthor>\\<AppName>
+        Vista:      (Fail! "C:\\ProgramData" is a hidden *system* directory on Vista.)
+        Win 7:      C:\\ProgramData\\<AppAuthor>\\<AppName>   # Hidden, but writeable on Win 7.
 
     For Unix, this is using the $XDG_DATA_DIRS[0] default.
 
@@ -202,7 +202,7 @@ def site_config_dir(appname=None, appauthor=None, version=None, multipath=False)
         Unix:       /etc/xdg/<AppName> or $XDG_CONFIG_DIRS[i]/<AppName> for each value in
                     $XDG_CONFIG_DIRS
         Win *:      same as site_data_dir
-        Vista:      (Fail! "C:\ProgramData" is a hidden *system* directory on Vista.)
+        Vista:      (Fail! "C:\\ProgramData" is a hidden *system* directory on Vista.)
 
     For Unix, this is using the $XDG_CONFIG_DIRS[0] default, if multipath=False
 

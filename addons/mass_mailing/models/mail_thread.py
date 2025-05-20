@@ -22,7 +22,7 @@ class MailThread(models.AbstractModel):
         email_to_localpart = (tools.email_split(email_to) or [''])[0].split('@', 1)[0].lower()
 
         if bounce_alias and bounce_alias in email_to_localpart:
-            bounce_re = re.compile("%s\+(\d+)-?([\w.]+)?-?(\d+)?" % re.escape(bounce_alias), re.UNICODE)
+            bounce_re = re.compile(r"%s\+(\d+)-?([\w.]+)?-?(\d+)?" % re.escape(bounce_alias), re.UNICODE)
             bounce_match = bounce_re.search(email_to)
             if bounce_match:
                 bounced_mail_id = bounce_match.group(1)

@@ -32,7 +32,7 @@ def html_entity_decode_char(m, defs=html.entities.entitydefs):
 
 
 def html_entity_decode(string):
-    pattern = re.compile("&(\w+?);")
+    pattern = re.compile(r"&(\w+?);")
     return pattern.sub(html_entity_decode_char, string)
 
 

@@ -106,7 +106,7 @@ class Inventory(models.Model):
     @api.model
     def _selection_filter(self):
         """ Get the list of filter allowed according to the options checked
-        in 'Settings\Warehouse'. """
+        in 'Settings\\\\Warehouse'. """
         res_filter = [
             ('none', _('All products')),
             ('category', _('One product category')),
@@ -238,7 +238,7 @@ class Inventory(models.Model):
         if self.company_id:
             domain += ' AND company_id = %s'
             args += (self.company_id.id,)
-        
+
         #case 1: Filter on One owner only or One product for a specific owner
         if self.partner_id:
             domain += ' AND owner_id = %s'

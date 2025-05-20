@@ -44,7 +44,7 @@ class Company(models.Model):
         <stroke color="#000000"/>
         <lines>%s</lines>
         <!-- Set here the default font to use for all <drawString> tags -->
-        <!-- don't forget to change the 2 other occurence of <setFont> above if needed --> 
+        <!-- don't forget to change the 2 other occurence of <setFont> above if needed -->
         <setFont name="DejaVuSans" size="8"/>
     </pageGraphics>
 </pageTemplate>
@@ -244,7 +244,7 @@ class Company(models.Model):
         def _change_header(header, font):
             """ Replace default fontname use in header and setfont tag """
             default_para = re.sub(r'fontName.?=.?".*"', 'fontName="%s"' % font, header)
-            return re.sub(r'(<setFont.?name.?=.?)(".*?")(.)', '\g<1>"%s"\g<3>' % font, default_para)
+            return re.sub(r'(<setFont.?name.?=.?)(".*?")(.)', r'\g<1>"%s"\g<3>' % font, default_para)
 
         if self.font:
             fontname = self.font.name

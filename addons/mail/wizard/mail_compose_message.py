@@ -9,7 +9,7 @@ from odoo.tools.safe_eval import safe_eval
 
 
 # main mako-like expression pattern
-EXPRESSION_PATTERN = re.compile('(\$\{.+?\})')
+EXPRESSION_PATTERN = re.compile('(\\$\\{.+?\\})')
 
 
 def _reopen(self, res_id, model, context=None):
@@ -347,7 +347,7 @@ class MailComposer(models.TransientModel):
     def onchange_template_id(self, template_id, composition_mode, model, res_id):
         """ - mass_mailing: we cannot render, so return the template values
             - normal mode: return rendered values
-            /!\ for x2many field, this onchange return command instead of ids
+            /!\\ for x2many field, this onchange return command instead of ids
         """
         if template_id and composition_mode == 'mass_mail':
             template = self.env['mail.template'].browse(template_id)

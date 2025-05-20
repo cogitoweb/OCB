@@ -136,7 +136,7 @@ From: "Bruce Wayne" <bruce@wayneenterprises.com>
 Content-Type: multipart/alternative;
  boundary="Apple-Mail=_9331E12B-8BD2-4EC7-B53E-01F3FBEC9227"
 Message-Id: <6BB1FAB2-2104-438E-9447-07AE2C8C4A92@sexample.com>
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
+Mime-Version: 1.0 (Mac OS X Mail 7.3 \\(1878.6\\))
 
 --Apple-Mail=_9331E12B-8BD2-4EC7-B53E-01F3FBEC9227
 Content-Transfer-Encoding: 7bit
@@ -185,7 +185,7 @@ Content-Type: application/pdf;
 Content-Disposition: filename=thetruth.pdf
 Content-Transfer-Encoding: base64
 Message-Id: <6BB1FAB2-2104-438E-9447-07AE2C8C4A92@sexample.com>
-Mime-Version: 1.0 (Mac OS X Mail 7.3 \(1878.6\))
+Mime-Version: 1.0 (Mac OS X Mail 7.3 \\(1878.6\\))
 
 SSBhbSB0aGUgQmF0TWFuCg=="""
 
