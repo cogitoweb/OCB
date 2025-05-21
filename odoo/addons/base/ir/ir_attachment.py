@@ -99,8 +99,9 @@ class IrAttachment(models.Model):
                 r = human_size(os.path.getsize(full_path))
             else:
                 r = base64.b64encode(open(full_path,'rb').read())
-        except (IOError, OSError):
-            _logger.info("_read_file reading %s", full_path, exc_info=True)
+        except (IOError, OSError) as e:
+            _logger.info("Error reading file %s", e)
+            _logger.debug("_read_file reading %s", full_path, exc_info=True)
         return r
 
     @api.model
@@ -113,8 +114,9 @@ class IrAttachment(models.Model):
                     fp.write(bin_value)
                 # add fname to checklist, in case the transaction aborts
                 self._mark_for_gc(fname)
-            except IOError:
-                _logger.info("_file_write writing %s", full_path, exc_info=True)
+            except IOError as e:
+                _logger.info("Error writing file %s.", e)
+                _logger.debug("_file_write writing %s", full_path, exc_info=True)
         return fname
 
     @api.model
