@@ -5917,6 +5917,7 @@ msgstr "Lasciare vuoto per utilizzare la data fattura."
 
 #. module: account
 #: selection:account.payment,payment_difference_handling:0
+#: selection:account.register.payments,payment_difference_handling:0
 msgid "Keep open"
 msgstr "Lasciare aperto"
 
@@ -6381,6 +6382,7 @@ msgstr "Marzo"
 
 #. module: account
 #: selection:account.payment,payment_difference_handling:0
+#: selection:account.register.payments,payment_difference_handling:0
 msgid "Mark invoice as fully paid"
 msgstr "Marca la fattura come pagata interamente"
 
@@ -7334,6 +7336,7 @@ msgstr "Data pagamento"
 
 #. module: account
 #: model:ir.model.fields,field_description:account.field_account_payment_payment_difference_handling
+#: model:ir.model.fields,field_description:account.field_account_register_payments_payment_difference_handling
 msgid "Payment Difference"
 msgstr "Differenza di pagamento"
 
