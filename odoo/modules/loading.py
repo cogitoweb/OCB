@@ -189,8 +189,9 @@ def load_module_graph(cr, graph, status=None, perform_checks=True,
             migrations.migrate_module(package, 'post')
 
             # Update translations for all installed languages
-            overwrite = odoo.tools.config["overwrite_existing_translations"]
-            module.with_context(overwrite=overwrite).update_translations()
+            if not odoo.tools.config.get("skip_translation_reload", False):
+                overwrite = odoo.tools.config["overwrite_existing_translations"]
+                module.with_context(overwrite=overwrite).update_translations()
 
             registry._init_modules.add(package.name)
 

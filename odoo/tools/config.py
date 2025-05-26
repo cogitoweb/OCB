@@ -81,7 +81,8 @@ class configmanager(object):
         # Not exposed in the configuration file.
         self.blacklist_for_save = set([
             'publisher_warranty_url', 'load_language', 'root_path',
-            'init', 'save', 'config', 'update', 'stop_after_init', 'dev_mode', 'shell_interface'
+            'init', 'save', 'config', 'update', 'stop_after_init', 'dev_mode', 'shell_interface',
+            'skip_translation_reload'
         ])
 
         # dictionary mapping option destination (keys in self.options) to MyOptions.
@@ -226,6 +227,8 @@ class configmanager(object):
                          help="import a CSV or a PO file with translations and exit. The '-l' option is required.")
         group.add_option("--i18n-overwrite", dest="overwrite_existing_translations", action="store_true", my_default=False,
                          help="overwrites existing translation terms on updating a module or importing a CSV or a PO file.")
+        group.add_option("--skip-translation-reload", dest="skip_translation_reload", action="store_true", my_default=False,
+                         help="skip reloading translations during module updates to improve performance.")
         group.add_option("--modules", dest="translate_modules",
                          help="specify modules to export. Use in combination with --i18n-export")
         parser.add_option_group(group)
@@ -409,7 +412,7 @@ class configmanager(object):
         # if defined but None take the configfile value
         keys = [
             'language', 'translate_out', 'translate_in', 'overwrite_existing_translations',
-            'dev_mode', 'shell_interface', 'smtp_ssl', 'load_language',
+            'skip_translation_reload', 'dev_mode', 'shell_interface', 'smtp_ssl', 'load_language',
             'stop_after_init', 'logrotate', 'without_demo', 'xmlrpc', 'syslog',
             'list_db', 'proxy_mode',
             'test_file', 'test_enable', 'test_commit', 'test_report_directory',
