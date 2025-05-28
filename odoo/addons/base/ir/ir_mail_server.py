@@ -47,6 +47,8 @@ def try_coerce_ascii(string_utf8):
         return
     return string_utf8
 
+def is_ascii(s):
+    return all(ord(cp) < 128 for cp in s)
 
 def encode_header(header_text):
     """Returns an appropriate representation of the given header value,
@@ -64,16 +66,10 @@ def encode_header(header_text):
     """
     if not header_text:
         return ""
-    # convert anything to utf-8, suitable for testing ASCIIness, as 7-bit chars are
-    # encoded as ASCII in utf-8
-    header_text_utf8 = ustr(header_text).encode('utf-8')
-    header_text_ascii = try_coerce_ascii(header_text_utf8)
-    # if this header contains non-ASCII characters,
-    # we'll need to wrap it up in a message.header.Header
-    # that will take care of RFC2047-encoding it as
-    # 7-bit string.
-    return header_text_ascii or Header(header_text_utf8, 'utf-8')
-
+    header_text = ustr(header_text) # FIXME: require unicode higher up?
+    if is_ascii(header_text):
+        return header_text
+    return Header(header_text, 'utf-8')
 
 def encode_header_param(param_text):
     """Returns an appropriate RFC2047 encoded representation of the given
@@ -91,9 +87,10 @@ def encode_header_param(param_text):
     # For details see the encode_header() method that uses the same logic
     if not param_text:
         return ""
-    param_text_utf8 = ustr(param_text).encode('utf-8')
-    param_text_ascii = try_coerce_ascii(param_text_utf8)
-    return param_text_ascii or Charset('utf8').header_encode(param_text_utf8)
+    param_text = ustr(param_text) # FIXME: require unicode higher up?
+    if is_ascii(param_text):
+        return param_text
+    return Charset("utf-8").header_encode(param_text)
 
 
 address_pattern = re.compile(r'([^ ,<@]+@[^> ,]+)')
@@ -105,8 +102,8 @@ def extract_rfc2822_addresses(text):
     """
     if not text:
         return []
-    candidates = address_pattern.findall(ustr(text).encode('utf-8'))
-    return list(filter(try_coerce_ascii, candidates))
+    candidates = address_pattern.findall(text)
+    return [c for c in candidates if is_ascii(c)]
 
 
 def encode_rfc2822_address_header(header_text):
@@ -118,12 +115,15 @@ def encode_rfc2822_address_header(header_text):
     """
     def encode_addr(addr):
         name, email = addr
-        if not try_coerce_ascii(name):
-            name = str(Header(name, 'utf-8'))
-        return formataddr((name, email))
+        try:
+            return formataddr((name, email), 'ascii')
+        except UnicodeEncodeError:
+            _logger.warning(_('Failed to encode the address %s\n'
+                              'from mail header:\n%s') % (addr, header_text))
+            return ""
 
-    addresses = getaddresses([ustr(header_text).encode('utf-8')])
-    return COMMASPACE.join(map(encode_addr, addresses))
+    addresses = getaddresses([header_text])
+    return COMMASPACE.join(a for a in (encode_addr(addr) for addr in addresses) if a)
 
 
 class IrMailServer(models.Model):
