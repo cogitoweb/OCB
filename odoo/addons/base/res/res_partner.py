@@ -305,7 +305,7 @@ class Partner(models.Model, FormatAddress):
         if image and colorize:
             image = tools.image_colorize(image)
 
-        return tools.image_resize_image_big(image.encode('base64'))
+        return tools.image_resize_image_big(base64.b64encode(image))
 
     @api.model
     def fields_view_get(self, view_id=None, view_type='form', toolbar=False, submenu=False):
