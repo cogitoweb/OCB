@@ -1,7 +1,7 @@
 # Translation of Odoo Server.
 # This file contains the translation of the following modules:
 # * base
-# 
+#
 # Translators:
 # Daniele Faraglia <daniele.faraglia@gmail.com>, 2016
 # Giuseppe Castellani <giuseppecastellani@gmail.com>, 2016
@@ -26,7 +26,7 @@
 # Martin Trigaux, 2019
 # mymage <stefano.consolaro@mymage.it>, 2019
 # Sergio Zanchetta <primes2h@gmail.com>, 2019
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 10.0\n"
@@ -17566,10 +17566,14 @@ msgstr "Inizia configurazione"
 #: model:ir.ui.view,arch_db:base.view_country_state_form
 #: model:ir.ui.view,arch_db:base.view_country_state_tree
 #: model:ir.ui.view,arch_db:base.view_partner_address_form
-#: model:ir.ui.view,arch_db:base.view_partner_form
 #: model:ir.ui.view,arch_db:base.view_res_bank_form
 msgid "State"
 msgstr "Stato"
+
+#. module: base
+#: model:ir.ui.view,arch_db:base.view_partner_form
+msgid "State"
+msgstr "Provincia"
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_country_state_code
