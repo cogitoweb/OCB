@@ -34,9 +34,9 @@ class BaseLanguageExport(models.TransientModel):
         lang = this.lang if this.lang != NEW_LANG_KEY else False
         mods = sorted(this.mapped('modules.name')) or ['all']
 
-        with contextlib.closing(io.StringIO()) as buf:
+        with contextlib.closing(io.BytesIO()) as buf:
             tools.trans_export(lang, mods, buf, this.format, self._cr)
-            out = base64.encodestring(buf.getvalue())
+            out = base64.b64encode(buf.getvalue())
 
         filename = 'new'
         if lang:

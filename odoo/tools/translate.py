@@ -458,7 +458,11 @@ def unquote(str):
 # class to handle po files
 class PoFile(object):
     def __init__(self, buffer):
-        self.buffer = buffer
+        self.buffer = codecs.StreamReaderWriter(
+            stream=buffer,
+            Reader=codecs.getreader('utf-8'),
+            Writer=codecs.getwriter('utf-8')
+        )
 
     def __iter__(self):
         self.buffer.seek(0)
@@ -628,7 +632,7 @@ class PoFile(object):
         msg = "msgid %s\n"      \
               "msgstr %s\n\n"   \
                   % (quote(source), quote(trad))
-        self.buffer.write(msg.encode('utf8'))
+        self.buffer.write(msg)
 
 
 # Methods to export the translation file
@@ -921,7 +925,7 @@ def trans_generate(lang, modules, cr):
         for m in env['ir.module.module'].search_read([('state', '=', 'installed')], fields=['name'])
     ]
 
-    path_list = [(path, True) for path in odoo.modules.module.ad_paths]
+    path_list = [(path, True) for path in odoo.addons.__path__]
     # Also scan these non-addon paths
     for bin_path in ['osv', 'report', 'modules', 'service', 'tools']:
         path_list.append((os.path.join(config['root_path'], bin_path), True))
@@ -955,9 +959,12 @@ def trans_generate(lang, modules, cr):
         module, fabsolutepath, _, display_path = verified_module_filepaths(fname, path, root)
         extra_comments = extra_comments or []
         if not module: return
-        src_file = open(fabsolutepath, 'r')
+        src_file = open(fabsolutepath, 'rb')
+        options = {}
+        if extract_method == 'python':
+            options['encoding'] = 'UTF-8'
         try:
-            for extracted in extract.extract(extract_method, src_file, keywords=extract_keywords):
+            for extracted in extract.extract(extract_method, src_file, keywords=extract_keywords, options=options):
                 # Babel 0.9.6 yields lineno, message, comments
                 # Babel 1.3 yields lineno, message, comments, context
                 lineno, message, comments = extracted[:3]
