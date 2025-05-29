@@ -790,7 +790,7 @@ def trans_generate(lang, modules, cr):
             # wrap to make sure html content like '<a>b</a><c>d</c>' is accepted by lxml
             wrapped = "<div>%s</div>" % sanitized_term
             node = etree.fromstring(wrapped)
-            sanitized_term = etree.tostring(node, encoding='UTF-8', method='text')
+            sanitized_term = etree.tostring(node, encoding='unicode', method='text')
         except etree.ParseError:
             pass
         # remove non-alphanumeric chars
