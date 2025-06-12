@@ -34,18 +34,23 @@ class WriteToLogger(object):
 smtplib.stderr = WriteToLogger()
 
 def try_coerce_ascii(string_utf8):
-    """Attempts to decode the given utf8-encoded string
-       as ASCII after coercing it to UTF-8, then return
-       the confirmed 7-bit ASCII string.
-
-       If the process fails (because the string
-       contains non-ASCII characters) returns ``None``.
+    """Attempts to coerce the given string or bytes to ASCII.
+       Returns the confirmed 7-bit ASCII string (as str).
+       If the process fails (because the string contains non-ASCII characters) returns None.
     """
-    try:
-        string_utf8.decode('ascii')
-    except UnicodeDecodeError:
-        return
-    return string_utf8
+    if isinstance(string_utf8, bytes):
+        try:
+            return string_utf8.decode('ascii')
+        except UnicodeDecodeError:
+            return None
+    elif isinstance(string_utf8, str):
+        try:
+            string_utf8.encode('ascii')
+            return string_utf8
+        except UnicodeEncodeError:
+            return None
+    else:
+        return None
 
 def is_ascii(s):
     return all(ord(cp) < 128 for cp in s)
@@ -222,7 +227,7 @@ class IrMailServer(models.Model):
         """Constructs an RFC2822 email.message.Message object based on the keyword arguments passed, and returns it.
 
            :param string email_from: sender email address
-           :param list email_to: list of recipient addresses (to be joined with commas) 
+           :param list email_to: list of recipient addresses (to be joined with commas)
            :param string subject: email subject (no pre-encoding/quoting necessary)
            :param string body: email body, of the type ``subtype`` (by default, plaintext).
                                If html subtype is used, the message will be automatically converted
