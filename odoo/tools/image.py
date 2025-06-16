@@ -172,8 +172,8 @@ def crop_image(data, type='top', ratio=False, thumbnail_ratio=None, image_format
     """
     if not data:
         return False
-    image_stream = Image.open(io.StringIO(data.decode('base64')))
-    output_stream = io.StringIO()
+    image_stream = Image.open(io.BytesIO(base64.b64decode(data)))
+    output_stream = io.BytesIO()
     w, h = image_stream.size
     new_h = h
     new_w = w
@@ -199,10 +199,10 @@ def crop_image(data, type='top', ratio=False, thumbnail_ratio=None, image_format
         raise ValueError('ERROR: invalid value for crop_type')
     # TDE FIXME: should not have a ratio, makes no sense -> should have maximum width (std: 64; 256 px)
     if thumbnail_ratio:
-        thumb_image = Image.open(io.StringIO(output_stream.getvalue()))
+        thumb_image = Image.open(io.BytesIO(output_stream.getvalue()))
         thumb_image.thumbnail((new_w / thumbnail_ratio, new_h / thumbnail_ratio), Image.ANTIALIAS)
         thumb_image.save(output_stream, image_format)
-    return output_stream.getvalue().encode('base64')
+    return base64.b64encode(output_stream.getvalue())
 
 # ----------------------------------------
 # Colors
@@ -215,7 +215,7 @@ def image_colorize(original, randomize=True, color=(255, 255, 255)):
         :param color: background-color, if not randomize
     """
     # create a new image, based on the original one
-    original = Image.open(io.StringIO(original))
+    original = Image.open(io.BytesIO(original))
     image = Image.new('RGB', original.size)
     # generate the background color, past it as background
     if randomize:
@@ -223,7 +223,7 @@ def image_colorize(original, randomize=True, color=(255, 255, 255)):
     image.paste(color, box=(0, 0) + original.size)
     image.paste(original, mask=original)
     # return the new image
-    buffer = io.StringIO()
+    buffer = io.BytesIO()
     image.save(buffer, 'PNG')
     return buffer.getvalue()
 
