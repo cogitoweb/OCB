@@ -8,11 +8,12 @@ import datetime
 import dateutil.relativedelta as relativedelta
 import logging
 import lxml
+import re
 import urllib.parse
 from urllib.parse import urlencode, quote as quote
 from functools import reduce
 
-
+from werkzeug import urls
 from odoo import _, api, fields, models, tools
 from odoo import report as odoo_report
 from odoo.exceptions import UserError
@@ -307,42 +308,36 @@ class MailTemplate(models.Model):
     # RENDERING
     # ----------------------------------------
 
-    @api.model
-    def _replace_local_links(self, html):
-        """ Post-processing of html content to replace local links to absolute
-        links, using web.base.url as base url. """
+    def _replace_local_links(self, html, base_url=None):
+        """ Replace local links by absolute links. It is required in various
+        cases, for example when sending emails on chatter or sending mass
+        mailings. It replaces
+
+         * href of links (mailto will not match the regex)
+         * src of images (base64 hardcoded data will not match the regex)
+         * styling using url like background-image: url
+
+        It is done using regex because it is shorten than using an html parser
+        to create a potentially complex soupe and hope to have a result that
+        has not been harmed.
+        """
         if not html:
             return html
 
-        # form a tree
-        root = lxml.html.fromstring(html)
-        if not len(root) and root.text is None and root.tail is None:
-            html = '<div>%s</div>' % html
-            root = lxml.html.fromstring(html)
+        html = html
 
-        base_url = self.env['ir.config_parameter'].get_param('web.base.url')
-        (base_scheme, base_netloc, bpath, bparams, bquery, bfragment) = urllib.parse.urlparse(base_url)
+        def _sub_relative2absolute(match):
+            # compute here to do it only if really necessary + cache will ensure it is done only once
+            # if not base_url
+            if not _sub_relative2absolute.base_url:
+                _sub_relative2absolute.base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url")
+            return match.group(1) + urls.url_join(_sub_relative2absolute.base_url, match.group(2))
 
-        def _process_link(url):
-            new_url = url
-            (scheme, netloc, path, params, query, fragment) = urllib.parse.urlparse(url)
-            if not scheme and not netloc:
-                new_url = urllib.parse.urlunparse((base_scheme, base_netloc, path, params, query, fragment))
-            return new_url
+        _sub_relative2absolute.base_url = base_url
+        html = re.sub(r"""(<img(?=\s)[^>]*\ssrc=")(/[^/][^"]+)""", _sub_relative2absolute, html)
+        html = re.sub(r"""(<a(?=\s)[^>]*\shref=")(/[^/][^"]+)""", _sub_relative2absolute, html)
+        html = re.sub(r"""(<[^>]+\bstyle="[^"]+\burl\('?)(/[^/'][^'")]+)""", _sub_relative2absolute, html)
 
-        # check all nodes, replace :
-        # - img src -> check URL
-        # - a href -> check URL
-        for node in root.iter():
-            if node.tag == 'a' and node.get('href'):
-                node.set('href', _process_link(node.get('href')))
-            elif node.tag == 'img' and not node.get('src', 'data').startswith('data'):
-                node.set('src', _process_link(node.get('src')))
-
-        html = lxml.html.tostring(root, pretty_print=False, method='html')
-        # this is ugly, but lxml/etree tostring want to put everything in a 'div' that breaks the editor -> remove that
-        if html.startswith(b'<div>') and html.endswith(b'</div>'):
-            html = html[5:-6]
         return html
 
     @api.model
