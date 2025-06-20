@@ -218,7 +218,7 @@
                         <filter string="Destination" name="groupby_dest_location_id" domain="[]" context="{'group_by':'location_dest_id'}" groups="stock.group_stock_multi_locations"/>
                         <filter string="Status" domain="[]" context="{'group_by':'state'}"/>
                         <filter string="Creation" name="groupby_create_date" domain="[]" context="{'group_by':'create_date'}" groups="base.group_no_one"/>
-                        <filter string="Scheduled" name="groupby_date" domain="[]" context="{'group_by':'date_expected'}"/>
+                        <filter string="Date Expected" name="groupby_date" domain="[]" context="{'group_by':'date_expected'}"/>
                     </group>
                 </search>
             </field>
