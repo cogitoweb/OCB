@@ -24,7 +24,7 @@ import werkzeug.utils
 import werkzeug.wrappers
 import zlib
 from xml.etree import ElementTree
-from io import StringIO
+from io import BytesIO, StringIO
 import unicodedata
 
 
@@ -1466,7 +1466,7 @@ class ExcelExport(ExportFormat, http.Controller):
                     cell_style = date_style
                 worksheet.write(row_index + 1, cell_index, cell_value, cell_style)
 
-        fp = StringIO()
+        fp = BytesIO()
         workbook.save(fp)
         fp.seek(0)
         data = fp.read()
