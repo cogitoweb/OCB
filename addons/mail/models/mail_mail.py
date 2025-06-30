@@ -303,7 +303,7 @@ class MailMail(models.Model):
                     try:
                         res = IrMailServer.send_email(msg, mail_server_id=mail.mail_server_id.id)
                     except AssertionError as error:
-                        if error.message == IrMailServer.NO_VALID_RECIPIENT:
+                        if str(error) == IrMailServer.NO_VALID_RECIPIENT:
                             # No valid recipient found for this particular
                             # mail item -> ignore error to avoid blocking
                             # delivery to next recipients, if any. If this is
