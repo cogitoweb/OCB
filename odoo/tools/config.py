@@ -409,6 +409,11 @@ class configmanager(object):
             self.options['log_handler'] = self.options['log_handler'].split(',')
         self.options['log_handler'].extend(opt.log_handler)
 
+        # Check for environment variable for addons_path and give it highest priority
+        env_addons_path = os.environ.get('ODOO_ADDONS_PATH')
+        if env_addons_path:
+            self.options['addons_path'] = env_addons_path
+
         # if defined but None take the configfile value
         keys = [
             'language', 'translate_out', 'translate_in', 'overwrite_existing_translations',
