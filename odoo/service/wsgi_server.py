@@ -56,7 +56,7 @@ def xmlrpc_return(start_response, service, method, params, string_faultcode=Fals
     # exception handling.
     try:
         result = odoo.http.dispatch_rpc(service, method, params)
-        response = xmlrpc.client.dumps((result,), methodresponse=1, allow_none=False, encoding=None)
+        response = xmlrpc.client.dumps((result,), methodresponse=1, allow_none=False, encoding='utf-8').encode('utf-8')
     except Exception as e:
         if string_faultcode:
             response = xmlrpc_handle_exception_string(e)
@@ -160,7 +160,7 @@ def application_unproxied(environ, start_response):
     # web.session.OpenERPSession.send() and at RPC dispatch in
     # odoo.service.web_services.objects_proxy.dispatch().
     # /!\ The cleanup cannot be done at the end of this `application`
-    # method because werkzeug still produces relevant logging afterwards 
+    # method because werkzeug still produces relevant logging afterwards
     if hasattr(threading.current_thread(), 'uid'):
         del threading.current_thread().uid
     if hasattr(threading.current_thread(), 'dbname'):
