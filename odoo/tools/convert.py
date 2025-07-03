@@ -871,7 +871,7 @@ def convert_csv_import(cr, module, fname, csvcontent, idref=None, mode='init',
     filename, _ext = os.path.splitext(os.path.basename(fname))
     model = filename.split('-')[0]
     reader = pycompat.csv_reader(io.BytesIO(csvcontent), quotechar='"', delimiter=',')
-    fields = next(reader)
+    fields = tuple(next(reader))
 
     if not (mode == 'init' or 'id' in fields):
         _logger.error("Import specification does not contain 'id' and we are in init mode, Cannot continue.")
