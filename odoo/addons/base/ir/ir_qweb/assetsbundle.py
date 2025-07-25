@@ -303,7 +303,7 @@ class AssetsBundle(object):
                         outdated = True
                         break
                     if asset._content is None:
-                        asset._content = attachment.datas and attachment.datas.decode('base64').decode('utf8') or ''
+                        asset._content = attachment.datas and base64.b64decode(attachment.datas).decode('utf8') or ''
                         if not asset._content and attachment.file_size > 0:
                             asset._content = None # file missing, force recompile
 
@@ -345,7 +345,7 @@ class AssetsBundle(object):
                             url = asset.html_url
                             with self.env.cr.savepoint():
                                 self.env['ir.attachment'].sudo().create(dict(
-                                    datas=asset.content.encode('utf8').encode('base64'),
+                                    datas=base64.b64encode(asset.content.encode('utf8')),
                                     mimetype='text/css',
                                     type='binary',
                                     name=url,
@@ -488,7 +488,7 @@ class WebAsset(object):
                 with closing(tools.file_open(self._filename, 'rb')) as fp:
                     return fp.read().decode('utf-8')
             else:
-                return self._ir_attach['datas'].decode('base64').decode('utf-8')
+                return base64.b64decode(self._ir_attach['datas']).decode('utf-8')
         except UnicodeDecodeError:
             raise AssetError('%s is not utf-8 encoded.' % self.name)
         except IOError:
