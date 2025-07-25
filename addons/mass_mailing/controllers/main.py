@@ -5,6 +5,7 @@ import werkzeug
 
 from odoo import http, _
 from odoo.http import request
+import base64
 
 
 class MassMailController(http.Controller):

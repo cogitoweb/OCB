@@ -6,6 +6,7 @@ import itertools
 from odoo.addons.mail.tests.common import TestMail
 from odoo.exceptions import AccessError, except_orm
 from odoo.tools import mute_logger
+import base64
 
 
 class TestMailMessage(TestMail):

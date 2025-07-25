@@ -19,6 +19,7 @@ from odoo.addons.payment_ogone.data import ogone
 from odoo.tools import float_round, DEFAULT_SERVER_DATE_FORMAT
 from odoo.tools.float_utils import float_compare, float_repr
 from odoo.tools.safe_eval import safe_eval
+import base64
 
 _logger = logging.getLogger(__name__)
 
@@ -422,7 +423,7 @@ class PaymentTxOgone(models.Model):
             self.write({
                 'state': 'pending',
                 'acquirer_reference': tree.get('PAYID'),
-                'html_3ds': str(tree.HTML_ANSWER).decode('base64')
+                'html_3ds': strbase64.b64decode(tree.HTML_ANSWER)
             })
         elif status in self._ogone_wait_tx_status and tries > 0:
             time.sleep(0.5)

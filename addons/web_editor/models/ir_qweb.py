@@ -29,6 +29,7 @@ from odoo import api, models, fields
 from odoo.tools import ustr
 from odoo.tools import html_escape as escape
 from odoo.addons.base.ir import ir_qweb
+import base64
 
 REMOTE_CONNECTION_TIMEOUT = 2.5
 

@@ -6,6 +6,7 @@ import os
 
 from odoo.tests import common
 from odoo.tools import html_escape as e
+import base64
 
 directory = os.path.dirname(__file__)
 
@@ -213,7 +214,7 @@ class TestBinaryExport(TestBasicExport):
         with open(os.path.join(directory, 'test_vectors', 'image'), 'rb') as f:
             content = f.read()
 
-        encoded_content = content.encode('base64')
+        encoded_content = base64.b64encode(content)
         value = converter.value_to_html(encoded_content, {})
 
         self.assertEqual(
@@ -225,13 +226,13 @@ class TestBinaryExport(TestBasicExport):
             content = f.read()
 
         with self.assertRaises(ValueError):
-            converter.value_to_html(content.encode('base64'), {})
+            converter.value_to_html(base64.b64encode(content), {})
 
         with open(os.path.join(directory, 'test_vectors', 'pptx'), 'rb') as f:
             content = f.read()
 
         with self.assertRaises(ValueError):
-            converter.value_to_html(content.encode('base64'), {})
+            converter.value_to_html(base64.b64encode(content), {})
 
 
 class TestSelectionExport(TestBasicExport):

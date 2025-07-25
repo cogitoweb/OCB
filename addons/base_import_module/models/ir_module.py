@@ -10,6 +10,7 @@ from odoo.exceptions import UserError
 from odoo.modules import load_information_from_description_file
 from odoo.tools import convert_file, exception_to_unicode
 from odoo.tools.osutil import tempdir
+import base64
 
 _logger = logging.getLogger(__name__)
 

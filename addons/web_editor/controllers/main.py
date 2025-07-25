@@ -11,6 +11,7 @@ from PIL import Image, ImageFont, ImageDraw
 
 from odoo.http import request
 from odoo import http, tools
+import base64
 
 logger = logging.getLogger(__name__)
 
@@ -174,7 +175,7 @@ class Web_Editor(http.Controller):
 
                     attachment = Attachments.create({
                         'name': c_file.filename,
-                        'datas': data.encode('base64'),
+                        'datas': base64.b64encode(data),
                         'datas_fname': c_file.filename,
                         'public': True,
                         'res_model': 'ir.ui.view',

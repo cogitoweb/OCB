@@ -9,6 +9,7 @@ from odoo.tools import html_escape as escape, posix_to_ldml, safe_eval, float_ut
 from .qweb import unicodifier
 
 import logging
+import base64
 _logger = logging.getLogger(__name__)
 
 
@@ -283,7 +284,7 @@ class ImageConverter(models.AbstractModel):
     @api.model
     def value_to_html(self, value, options):
         try:
-            image = Image.open(StringIO(value.decode('base64')))
+            image = Image.open(StringIO(base64.b64decode(value)))
             image.verify()
         except IOError:
             raise ValueError("Non-image binary fields can not be converted to HTML")

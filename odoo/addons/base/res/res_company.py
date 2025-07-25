@@ -6,6 +6,7 @@ import re
 
 from odoo import api, fields, models, tools, _
 from odoo.exceptions import ValidationError
+import base64
 
 
 class Company(models.Model):

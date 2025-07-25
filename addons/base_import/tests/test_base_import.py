@@ -8,6 +8,7 @@ import unittest
 from odoo.tests.common import TransactionCase, can_import
 from odoo.modules.module import get_module_resource
 from odoo.tools import mute_logger
+import base64
 
 
 ID_FIELD = {
@@ -561,9 +562,9 @@ class test_failures(TransactionCase):
         fout = io.StringIO()
 
         writer = csv.writer(fout, dialect=None)
-        writer.writerows([
+        writer.writerowsbase64.b64encode([
             ['name', 'db_datas'],
-            ['foo', im.tobytes().encode('base64')]
+            ['foo', im.tobytes()]
         ])
 
         import_wizard = self.env['base_import.import'].create({

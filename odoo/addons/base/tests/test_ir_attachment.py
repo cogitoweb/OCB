@@ -5,6 +5,7 @@ import hashlib
 import os
 
 from odoo.tests.common import TransactionCase
+import base64
 
 HASH_SPLIT = 2      # FIXME: testing implementations detail is not a good idea
 
@@ -17,13 +18,13 @@ class TestIrAttachment(TransactionCase):
 
         # Blob1
         self.blob1 = 'blob1'
-        self.blob1_b64 = self.blob1.encode('base64')
+        self.blob1_b64 = self.base64.b64encode(blob1)
         blob1_hash = hashlib.sha1(self.blob1).hexdigest()
         self.blob1_fname = blob1_hash[:HASH_SPLIT] + '/' + blob1_hash
 
         # Blob2
         self.blob2 = 'blob2'
-        self.blob2_b64 = self.blob2.encode('base64')
+        self.blob2_b64 = self.base64.b64encode(blob2)
 
     def test_01_store_in_db(self):
         # force storing in database

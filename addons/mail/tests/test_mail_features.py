@@ -3,6 +3,7 @@
 
 from odoo.addons.mail.tests.common import TestMail
 from odoo.tools import mute_logger
+import base64
 
 
 class TestMailFeatures(TestMail):
@@ -190,7 +191,7 @@ class TestMessagePost(TestMail):
                          'message_post: all atttachments should be linked to the mail.channel model')
         self.assertEqual(set(msg.attachment_ids.mapped('res_id')), set([self.group_pigs.id]),
                          'message_post: all atttachments should be linked to the pigs group')
-        self.assertEqual(set([x.decode('base64') for x in msg.attachment_ids.mapped('datas')]),
+        self.assertEqual(set([base64.b64decode(x) for x in msg.attachment_ids.mapped('datas')]),
                          set(['migration test', _attachments[0][1], _attachments[1][1]]))
         self.assertTrue(set([_attach_1.id, _attach_2.id]).issubset(msg.attachment_ids.ids),
                         'message_post: mail.message attachments duplicated')

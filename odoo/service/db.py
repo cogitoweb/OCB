@@ -21,6 +21,7 @@ from odoo.exceptions import UserError
 import odoo.release
 import odoo.sql_db
 import odoo.tools
+import base64
 
 _logger = logging.getLogger(__name__)
 
@@ -220,7 +221,7 @@ def exp_restore(db_name, data, copy=False):
     data_file = tempfile.NamedTemporaryFile(delete=False)
     try:
         for chunk in chunks(data):
-            data_file.write(chunk.decode('base64'))
+            data_file.write(base64.b64decode(chunk))
         data_file.close()
         restore_db(db_name, data_file.name, copy=copy)
     finally:

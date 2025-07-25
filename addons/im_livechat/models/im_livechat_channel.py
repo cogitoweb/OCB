@@ -6,6 +6,7 @@ import re
 from datetime import datetime, timedelta
 
 from odoo import api, fields, models, modules, tools
+import base64
 
 
 class ImLivechatChannel(models.Model):

@@ -3,6 +3,7 @@
 
 from odoo import api, models
 from odoo.addons.base.ir.ir_qweb import unicodifier
+import base64
 
 
 class IrQwebFieldBarcode(models.AbstractModel):
@@ -20,7 +21,7 @@ class IrQwebFieldBarcode(models.AbstractModel):
             barcode_type,
             value,
             **dict((key, value) for key, value in list(options.items()) if key in ['width', 'height', 'humanreadable']))
-        return unicodifier('<img src="data:%s;base64,%s">' % ('png', barcode.encode('base64')))
+        return unicodifier('<img src="data:%s;base64,%s">' % ('png', base64.b64encode(barcode)))
 
     @api.model
     def from_html(self, model, field, element):
