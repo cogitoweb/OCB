@@ -679,3 +679,27 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
         if (action_id):
             return RedirectWarning(msg % values, action_id, _('Go to the configuration panel'))
         return UserError(msg % values)
+
+    @api.model
+    def populate_defaults(self):
+        _logger.info("Populating default values for %s" % self._name)
+        IrSettings = self.env['ir.settings']
+        # Populate default values in settings
+
+        default_fields = self._get_classified_fields()['default']
+        field_names = list(map(lambda item: item[0], default_fields))
+        default_values = self.default_get(field_names)
+
+        for name, model, field in default_fields:
+            value = default_values.get(name, None)
+            IrSettings.set_default(model, field, value)
+
+        return
+
+    # This is executed on every module update
+    @api.model_cr
+    def init(self):
+        super().init()
+        res = super(ResConfigSettings, self).init()
+        self.populate_defaults()
+        return res
