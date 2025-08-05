@@ -372,6 +372,10 @@ class Partner(models.Model, FormatAddress):
     @api.depends('name', 'email')
     def _compute_email_formatted(self):
         for partner in self:
+            if partner.email:
+                partner.email_formatted = formataddr((partner.name or '', partner.email))
+            else:
+                partner.email_formatted = ''
             partner.email_formatted = formataddr((partner.name, partner.email))
 
     @api.depends('is_company')
