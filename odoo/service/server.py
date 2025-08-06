@@ -125,15 +125,16 @@ class ThreadedWSGIServerReloadable(LoggingBaseWSGIServerMixIn, werkzeug.serving.
         if not self.reload_socket:
             super(ThreadedWSGIServerReloadable, self).server_activate()
 
-#----------------------------------------------------------
+
+# ----------------------------------------------------------
 # FileSystem Watcher for autoreload and cache invalidation
-#----------------------------------------------------------
+# ----------------------------------------------------------
 class FSWatcherBase(object):
     def handle_file(self, path):
         if path.endswith('.py') and not os.path.basename(path).startswith('.~'):
             try:
                 # Forward-ports: watch out PY3 compatibility!
-                source = open(path, 'rb').read() + '\n'
+                source = open(path, 'r').read() + '\n'
                 compile(source, path, 'exec')
             except IOError:
                 _logger.error('autoreload: python code change detected, IOError for %s', path)
@@ -149,7 +150,7 @@ class FSWatcherBase(object):
 class FSWatcherWatchdog(FSWatcherBase):
     def __init__(self):
         self.observer = Observer()
-        for path in odoo.modules.module.ad_paths:
+        for path in odoo.addons.__path__:
             _logger.info('Watching addons folder %s', path)
             self.observer.schedule(self, path, recursive=True)
 
@@ -175,7 +176,7 @@ class FSWatcherInotify(FSWatcherBase):
         inotify.adapters._LOGGER.setLevel(logging.ERROR)
         # recreate a list as InotifyTrees' __init__ deletes the list's items
         paths_to_watch = []
-        for path in odoo.modules.module.ad_paths:
+        for path in odoo.addons.__path__:
             paths_to_watch.append(path)
             _logger.info('Watching addons folder %s', path)
         self.watcher = InotifyTrees(paths_to_watch, mask=INOTIFY_LISTEN_EVENTS, block_duration_s=.5)
@@ -432,7 +433,7 @@ class GeventServer(CommonServer):
             signal.signal(signal.SIGQUIT, dumpstacks)
             signal.signal(signal.SIGUSR1, log_ormcache_stats)
             gevent.spawn(self.watchdog)
-        
+
         self.httpd = WSGIServer((self.interface, self.port), self.app)
         _logger.info('Evented Service (longpolling) running on %s:%s', self.interface, self.port)
         try:
