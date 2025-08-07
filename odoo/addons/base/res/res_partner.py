@@ -376,7 +376,6 @@ class Partner(models.Model, FormatAddress):
                 partner.email_formatted = formataddr((partner.name or '', partner.email))
             else:
                 partner.email_formatted = ''
-            partner.email_formatted = formataddr((partner.name, partner.email))
 
     @api.depends('is_company')
     def _compute_company_type(self):
