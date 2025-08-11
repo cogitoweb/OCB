@@ -476,3 +476,19 @@ pytz = wrap_module(__import__('pytz'), [
     'utc', 'UTC', 'timezone',
 ])
 dateutil.tz.gettz = pytz.timezone
+
+# Workflow wrapper per compatibilità con Odoo 10
+try:
+    import odoo.workflow
+    workflow = wrap_module(odoo.workflow, [
+        'workitem',
+        'instance',
+        'trg_validate',
+        'trg_redirect',
+        'trg_trigger',
+        'trg_write',
+        # Altri attributi sicuri del workflow se necessari
+    ])
+except ImportError:
+    # Il modulo workflow potrebbe non esistere in versioni più recenti
+    workflow = None
