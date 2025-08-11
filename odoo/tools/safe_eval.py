@@ -475,20 +475,14 @@ time = wrap_module(__import__('time'), ['time', 'strptime', 'strftime', 'sleep']
 pytz = wrap_module(__import__('pytz'), [
     'utc', 'UTC', 'timezone',
 ])
+workflow = wrap_module(__import__('odoo.workflow'), [
+    'trg_validate',
+    'trg_redirect',
+    'trg_trigger',
+    'trg_write',
+    'trg_create',
+    'trg_delete',
+    'clear_cache',
+])
 dateutil.tz.gettz = pytz.timezone
 
-# Workflow wrapper per compatibilità con Odoo 10
-try:
-    import odoo.workflow
-    workflow = wrap_module(odoo.workflow, [
-        'trg_validate',
-        'trg_redirect',
-        'trg_trigger',
-        'trg_write',
-        'trg_create',
-        'trg_delete',
-        'clear_cache',
-    ])
-except ImportError:
-    # Il modulo workflow potrebbe non esistere in versioni più recenti
-    workflow = None
