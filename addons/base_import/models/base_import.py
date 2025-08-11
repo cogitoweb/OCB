@@ -11,6 +11,8 @@ import operator
 import os
 import re
 
+import traceback
+
 from odoo import api, fields, models
 from odoo.tools.translate import _
 from odoo.tools.mimetypes import guess_mimetype
@@ -182,6 +184,7 @@ class Import(models.TransientModel):
             try:
                 return getattr(self, '_read_' + file_extension)(options)
             except Exception:
+                _logger.info(traceback.format_exc())
                 _logger.warn("Failed to read file '%s' (transient id %d) using user-provided mimetype %s", self.file_name or '<unknown>', self.id, self.file_type)
 
         # fallback on file extensions as mime types can be unreliable (e.g.
@@ -264,17 +267,16 @@ class Import(models.TransientModel):
 
         # TODO: guess encoding with chardet? Or https://github.com/aadsm/jschardet
         encoding = options.get('encoding', 'utf-8')
-        if encoding != 'utf-8':
-            # csv module expect utf-8, see http://docs.python.org/2/library/csv.html
-            csv_data = csv_data.decode(encoding).encode('utf-8')
+
+        csv_data = csv_data.decode(encoding)
 
         csv_iterator = csv.reader(
-            StringIO(csv_data),
+            io.StringIO(csv_data),
             quotechar=str(options['quoting']),
             delimiter=str(options['separator']))
 
         return (
-            [item.decode('utf-8') for item in row]
+            [item for item in row]
             for row in csv_iterator
             if any(x for x in row if x.strip())
         )
@@ -686,7 +688,7 @@ class Import(models.TransientModel):
         defer_parent_store = self.env.context.get('defer_parent_store_computation', True)
         if defer_parent_store and model._parent_store:
             model = model.with_context(defer_parent_store_computation=True)
-        
+
         import_result = model.load(import_fields, data)
         _logger.info('done')
 
