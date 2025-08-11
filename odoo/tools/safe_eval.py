@@ -475,14 +475,5 @@ time = wrap_module(__import__('time'), ['time', 'strptime', 'strftime', 'sleep']
 pytz = wrap_module(__import__('pytz'), [
     'utc', 'UTC', 'timezone',
 ])
-workflow = wrap_module(__import__('odoo.workflow'), [
-    'trg_validate',
-    'trg_redirect',
-    'trg_trigger',
-    'trg_write',
-    'trg_create',
-    'trg_delete',
-    'clear_cache',
-])
 dateutil.tz.gettz = pytz.timezone
 
