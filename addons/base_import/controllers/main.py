@@ -3,6 +3,7 @@
 
 import cgi
 import json
+import werkzeug.utils
 
 from odoo import http
 from odoo.http import request
@@ -20,4 +21,4 @@ class ImportController(http.Controller):
             'file_type': file.content_type,
         })
 
-        return 'window.top.%s(%s)' % (cgi.escape(jsonp), json.dumps({'result': written}))
+        return 'window.top.%s(%s)' % (werkzeug.utils.escape(jsonp), json.dumps({'result': written}))
