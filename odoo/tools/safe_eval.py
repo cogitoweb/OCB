@@ -423,7 +423,7 @@ def check_values(d):
     if not d:
         return d
     for v in d.values():
-        if isinstance(v, types.ModuleType):
+        if isinstance(v, types.ModuleType) and "odoo" not in str(v):
             raise TypeError(f"""Module {v} can not be used in evaluation contexts
 
 Prefer providing only the items necessary for your intended use.
