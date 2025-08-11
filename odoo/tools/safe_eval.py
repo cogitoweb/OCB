@@ -481,13 +481,13 @@ dateutil.tz.gettz = pytz.timezone
 try:
     import odoo.workflow
     workflow = wrap_module(odoo.workflow, [
-        'workitem',
-        'instance',
         'trg_validate',
         'trg_redirect',
         'trg_trigger',
         'trg_write',
-        # Altri attributi sicuri del workflow se necessari
+        'trg_create',
+        'trg_delete',
+        'clear_cache',
     ])
 except ImportError:
     # Il modulo workflow potrebbe non esistere in versioni più recenti
