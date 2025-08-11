@@ -895,7 +895,7 @@ class BaseModel(object, metaclass=MetaModel):
                 cr.execute('ROLLBACK TO SAVEPOINT model_load_save')
             except Exception as e:
                 _logger.exception("Error while loading record")
-                message = (_('Unknown error during import:') + ' %s: %s' % (type(e), str(e.message or e.name)))
+                message = (_('Unknown error during import:') + ' %s: %s' % (type(e), str(e)))
                 moreinfo = _('Resolve other errors first')
                 messages.append(dict(info, type='error', message=message, moreinfo=moreinfo))
                 # Failed for some reason, perhaps due to invalid data supplied,
