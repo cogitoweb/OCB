@@ -455,6 +455,8 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
                 method = make_method(name)
                 self._onchange_methods[name].append(method)
 
+        self.populate_defaults()
+
     @api.model
     def _get_classified_fields(self):
         """ return a dictionary with the fields classified by category::
@@ -695,11 +697,3 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
             IrSettings.set_default(model, field, value)
 
         return
-
-    # This is executed on every module update
-    @api.model_cr
-    def init(self):
-        super().init()
-        res = super(ResConfigSettings, self).init()
-        self.populate_defaults()
-        return res
