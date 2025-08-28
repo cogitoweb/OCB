@@ -795,6 +795,9 @@ class Worker(object):
                 self.process_limit()
                 self.multi.pipe_ping(self.watchdog_pipe)
                 self.sleep()
+                # Check if we should exit after sleep
+                if not self.alive:
+                    break
                 self.process_work()
             _logger.info("Worker (%s) exiting. request_count: %s, registry count: %s.",
                          self.pid, self.request_count,
@@ -852,7 +855,12 @@ class WorkerCron(Worker):
         # Really sleep once all the databases have been processed.
         if self.db_index == 0:
             interval = SLEEP_INTERVAL + self.pid % 10   # chorus effect
-            time.sleep(interval)
+
+            # Use a loop with short sleeps to make it more responsive to signals
+            end_time = time.time() + interval
+            while time.time() < end_time and self.alive:
+                # Sleep for at most 1 second at a time
+                time.sleep(min(1.0, end_time - time.time()))
 
     def _db_list(self):
         if config['db_name']:
@@ -862,6 +870,10 @@ class WorkerCron(Worker):
         return db_names
 
     def process_work(self):
+        # Check if we should exit before doing any work
+        if not self.alive:
+            return
+
         rpc_request = logging.getLogger('odoo.netsvc.rpc.request')
         rpc_request_flag = rpc_request.isEnabledFor(logging.DEBUG)
         _logger.debug("WorkerCron (%s) polling for jobs", self.pid)
@@ -875,7 +887,25 @@ class WorkerCron(Worker):
                 start_rss, start_vms = memory_info(psutil.Process(os.getpid()))
 
             import odoo.addons.base as base
-            base.ir.ir_cron.ir_cron._acquire_job(db_name)
+
+            # Set a timeout for _acquire_job to ensure it doesn't block indefinitely
+            def timeout_handler(signum, frame):
+                raise Exception("_acquire_job timed out")
+
+            # Set an alarm for 10 seconds
+            old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(10)
+
+            try:
+                base.ir.ir_cron.ir_cron._acquire_job(db_name)
+            except Exception as e:
+                # If we got an exception and we're supposed to exit, make sure we do
+                if not self.alive:
+                    return
+            finally:
+                # Cancel the alarm and restore the old handler
+                signal.alarm(0)
+                signal.signal(signal.SIGALRM, old_handler)
 
             # dont keep cursors in multi database mode
             if len(db_names) > 1:
