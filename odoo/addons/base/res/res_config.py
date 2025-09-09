@@ -455,8 +455,6 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
                 method = make_method(name)
                 self._onchange_methods[name].append(method)
 
-        self.populate_defaults()
-
     @api.model
     def _get_classified_fields(self):
         """ return a dictionary with the fields classified by category::

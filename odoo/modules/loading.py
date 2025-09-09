@@ -232,6 +232,13 @@ def load_module_graph(cr, graph, status=None, perform_checks=True,
 
     registry.clear_manual_fields()
 
+    if needs_update:
+        env = api.Environment(cr, SUPERUSER_ID, {})
+        res_config_model = env['res.config.settings']
+        for model_str in env:
+            model = env[model_str]
+            if isinstance(model, res_config_model.__class__):
+                model.populate_defaults()
     cr.commit()
 
     return loaded_modules, processed_modules
