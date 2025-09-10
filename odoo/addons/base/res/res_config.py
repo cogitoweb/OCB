@@ -3,6 +3,7 @@
 import json
 import logging
 import re
+import pickle
 
 from operator import attrgetter, add
 from lxml import etree
@@ -692,6 +693,21 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
 
         for name, model, field in default_fields:
             value = default_values.get(name, None)
+            if not value:
+                _logger.info("No default for %s:%s found in ir.settings. Searching in legacy ir.values" % (model, name))
+                raw_value: str = self.env['ir.values'].search([
+                    ('model', '=', model),
+                    ('name', '=', name),
+                    ('key', '=', 'default')
+                ], limit=1)
+                _logger.info("Found record in ir.values, trying to unpickle")
+                try:
+                    bytes_value = raw_value.encode()
+                    value = pickle.loads(bytes_value)
+                    _logger.info("Unpickled value: (%s) %s" (type(value), value))
+                except Exception as e:
+                    _logger.info("Exception: %s" % str(e))
+
             IrSettings.set_default(model, field, value)
 
         return
