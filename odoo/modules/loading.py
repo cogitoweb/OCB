@@ -116,6 +116,8 @@ def load_module_graph(cr, graph, status=None, perform_checks=True,
 
     models_updated = set()
 
+    reload_default_settings = False
+
     for index, package in enumerate(graph, 1):
         module_name = package.name
         module_id = package.id
@@ -131,6 +133,7 @@ def load_module_graph(cr, graph, status=None, perform_checks=True,
             or package.state in ("to install", "to upgrade")
         )
         if needs_update:
+            reload_default_settings = True
             if package.name != 'base':
                 registry.setup_models(cr, partial=True)
             migrations.migrate_module(package, 'pre')
@@ -232,7 +235,7 @@ def load_module_graph(cr, graph, status=None, perform_checks=True,
 
     registry.clear_manual_fields()
 
-    if needs_update:
+    if reload_default_settings:
         env = api.Environment(cr, SUPERUSER_ID, {})
         res_config_model = env['res.config.settings']
         for model_str in env:
