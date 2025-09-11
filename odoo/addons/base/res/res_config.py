@@ -693,21 +693,38 @@ class ResConfigSettings(models.TransientModel, ResConfigModuleInstallationMixin)
 
         for name, model, field in default_fields:
             value = default_values.get(name, None)
-            if not value:
-                _logger.info("No default for %s:%s found in ir.settings. Searching in legacy ir.values" % (model, name))
-                raw_value: str = self.env['ir.values'].search([
-                    ('model', '=', model),
-                    ('name', '=', name),
-                    ('key', '=', 'default')
-                ], limit=1)
+            IrSettings.set_default(model, field, value)
+        return
+
+    @api.model
+    def migrate_settings(self):
+        IrSettings = self.env['ir.settings']
+        default_fields: list[tuple[str, str, str]] = self._get_classified_fields()['default']
+        for name, model, field in default_fields:
+            stripped_name = name.lstrip('default_')
+            _logger.info("Getting %s:%s from legacy ir.values" % (model, stripped_name))
+            ir_value = self.env['ir.values'].search([
+                ('model', '=', model),
+                ('name', '=', name.removeprefix('default_')),
+                ('key', '=', 'default')
+            ], limit=1)
+            if ir_value:
                 _logger.info("Found record in ir.values, trying to unpickle")
+                raw_value = ir_value.value
                 try:
                     bytes_value = raw_value.encode()
                     value = pickle.loads(bytes_value)
-                    _logger.info("Unpickled value: (%s) %s" (type(value), value))
+                    _logger.info("Unpickled value: (%s) %s" % (type(value), value))
+                    IrSettings.set_default(model, field, value)
                 except Exception as e:
                     _logger.info("Exception: %s" % str(e))
+            else:
+                _logger.info("No record found in ir.values.")
 
-            IrSettings.set_default(model, field, value)
-
-        return
+    @api.model
+    def migrate_all_settings(self):
+        env = self.env
+        for model_str in env:
+            model = env[model_str]
+            if isinstance(model, self.__class__):
+                model.migrate_settings()
