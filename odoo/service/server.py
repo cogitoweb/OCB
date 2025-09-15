@@ -887,25 +887,12 @@ class WorkerCron(Worker):
                 start_rss, start_vms = memory_info(psutil.Process(os.getpid()))
 
             import odoo.addons.base as base
-
-            # Set a timeout for _acquire_job to ensure it doesn't block indefinitely
-            def timeout_handler(signum, frame):
-                raise Exception("_acquire_job timed out")
-
-            # Set an alarm for 10 seconds
-            old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(10)
-
             try:
                 base.ir.ir_cron.ir_cron._acquire_job(db_name)
-            except Exception as e:
+            except Exception:
                 # If we got an exception and we're supposed to exit, make sure we do
                 if not self.alive:
                     return
-            finally:
-                # Cancel the alarm and restore the old handler
-                signal.alarm(0)
-                signal.signal(signal.SIGALRM, old_handler)
 
             # dont keep cursors in multi database mode
             if len(db_names) > 1:
