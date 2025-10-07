@@ -1826,6 +1826,7 @@ msgstr "Data"
 
 #. module: stock
 #: model:ir.ui.view,arch_db:stock.stock_move_tree
+#: model:ir.ui.view,arch_db:stock.view_move_search
 msgid "Date Expected"
 msgstr "Data Prevista"
 
