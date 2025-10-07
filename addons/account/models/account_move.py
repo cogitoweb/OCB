@@ -1050,7 +1050,7 @@ class AccountMoveLine(models.Model):
             total_credit += aml.credit
             if aml.amount_residual_currency:
                 aml_to_balance_currency |= aml
-            maxdate = max(aml.date, maxdate)
+            maxdate = max(aml.date or '', maxdate or '')
             if not currency and aml.currency_id:
                 currency = aml.currency_id
             if aml.currency_id and aml.currency_id == currency:
@@ -1539,7 +1539,7 @@ class AccountPartialReconcile(models.Model):
                 if aml not in aml_set:
                     if aml.amount_residual or aml.amount_residual_currency:
                         aml_to_balance |= aml
-                    maxdate = max(aml.date, maxdate)
+                    maxdate = max(aml.date or '', maxdate or '')
                     total_debit += aml.debit
                     total_credit += aml.credit
                     aml_set |= aml
