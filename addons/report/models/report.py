@@ -415,7 +415,7 @@ class Report(models.Model):
 
             # Directly load the document if we already have it
             if save_in_attachment and save_in_attachment['loaded_documents'].get(reporthtml[0]):
-                with closing(os.fdopen(pdfreport_fd, 'w')) as pdfreport:
+                with closing(os.fdopen(pdfreport_fd, 'wb')) as pdfreport:
                     pdfreport.write(save_in_attachment['loaded_documents'][reporthtml[0]])
                 pdfdocuments.append(pdfreport_path)
                 continue
@@ -566,14 +566,14 @@ class Report(models.Model):
         streams = []  # We have to close the streams *after* PdfFilWriter's call to write()
         try:
             for document in documents:
-                pdfreport = file(document, 'rb')
+                pdfreport = open(document, 'rb')
                 streams.append(pdfreport)
                 reader = PdfReader(pdfreport)
-                for page in range(0, reader.getNumPages()):
-                    writer.addPage(reader.getPage(page))
+                for page in range(0, reader.get_num_pages()):
+                    writer.add_page(reader.get_page(page))
 
             merged_file_fd, merged_file_path = tempfile.mkstemp(suffix='.pdf', prefix='report.merged.tmp.')
-            with closing(os.fdopen(merged_file_fd, 'w')) as merged_file:
+            with closing(os.fdopen(merged_file_fd, 'wb')) as merged_file:
                 writer.write(merged_file)
         finally:
             for stream in streams:
