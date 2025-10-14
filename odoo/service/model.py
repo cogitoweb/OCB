@@ -120,8 +120,8 @@ def check(f):
             except IntegrityError as inst:
                 registry = odoo.registry(dbname)
                 for key in list(registry._sql_error.keys()):
-                    if key in inst[0]:
-                        raise ValidationError(tr(registry._sql_error[key], 'sql_constraint') or inst[0])
+                    if key in inst.pgerror:
+                        raise ValidationError(tr(registry._sql_error[key], 'sql_constraint') or inst.pgerror)
                 if inst.pgcode in (errorcodes.NOT_NULL_VIOLATION, errorcodes.FOREIGN_KEY_VIOLATION, errorcodes.RESTRICT_VIOLATION):
                     msg = _('The operation cannot be completed:')
                     _logger.debug("IntegrityError", exc_info=True)
