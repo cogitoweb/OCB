@@ -70,6 +70,8 @@ class Shell(Command):
             for i in sorted(local_vars):
                 print('%s: %s' % (i, local_vars[i]))
 
+            shell_file = config.options.get('shell_file') or None
+
             preferred_interface = config.options.get('shell_interface')
             if preferred_interface:
                 shells_to_try = [preferred_interface, 'python']
@@ -78,27 +80,31 @@ class Shell(Command):
 
             for shell in shells_to_try:
                 try:
-                    return getattr(self, shell)(local_vars)
+                    return getattr(self, shell)(local_vars, shell_file)
                 except ImportError:
                     pass
                 except Exception:
                     _logger.warning("Could not start '%s' shell." % shell)
                     _logger.debug("Shell error:", exc_info=True)
 
-    def ipython(self, local_vars):
+    def ipython(self, local_vars, shell_file=None):
         from IPython import start_ipython
         start_ipython(argv=[], user_ns=local_vars)
 
-    def ptpython(self, local_vars):
+    def ptpython(self, local_vars, shell_file=None):
         from ptpython.repl import embed
         embed({}, local_vars)
 
-    def bpython(self, local_vars):
+    def bpython(self, local_vars, shell_file=None):
         from bpython import embed
         embed(local_vars)
 
-    def python(self, local_vars):
-        Console(locals=local_vars).interact()
+    def python(self, local_vars, shell_file=None):
+        console = Console(local_vars)
+        if shell_file:
+            with open(shell_file, encoding='utf-8') as f:
+                console.runsource(f.read(), filename=shell_file, symbol='exec')
+        console.interact()
 
     def shell(self, dbname):
         local_vars = {
