@@ -81,7 +81,7 @@ class configmanager(object):
         # Not exposed in the configuration file.
         self.blacklist_for_save = set([
             'publisher_warranty_url', 'load_language', 'root_path',
-            'init', 'save', 'config', 'update', 'stop_after_init', 'dev_mode', 'shell_interface',
+            'init', 'save', 'config', 'update', 'stop_after_init', 'dev_mode', 'shell_interface', 'shell_file',
             'skip_translation_reload'
         ])
 
@@ -249,7 +249,6 @@ class configmanager(object):
         group.add_option(
             '--shell-file', dest='shell_file', type='string', my_default='',
             help="Specify a python script to be run after the start of the shell. "
-                 "Overrides the env variable PYTHONSTARTUP."
         )
         group.add_option("--stop-after-init", action="store_true", dest="stop_after_init", my_default=False,
                           help="stop the server after its initialization")
@@ -398,7 +397,7 @@ class configmanager(object):
                 'db_maxconn', 'import_partial', 'addons_path',
                 'xmlrpc', 'syslog', 'without_demo',
                 'dbfilter', 'log_level', 'log_db',
-                'log_db_level', 'geoip_database', 'dev_mode', 'shell_interface'
+                'log_db_level', 'geoip_database', 'dev_mode', 'shell_interface', 'shell_file',
         ]
 
         for arg in keys:
@@ -422,7 +421,7 @@ class configmanager(object):
         # if defined but None take the configfile value
         keys = [
             'language', 'translate_out', 'translate_in', 'overwrite_existing_translations',
-            'skip_translation_reload', 'dev_mode', 'shell_interface', 'smtp_ssl', 'load_language',
+            'skip_translation_reload', 'dev_mode', 'shell_interface', 'shell_file', 'smtp_ssl', 'load_language',
             'stop_after_init', 'logrotate', 'without_demo', 'xmlrpc', 'syslog',
             'list_db', 'proxy_mode',
             'test_file', 'test_enable', 'test_commit', 'test_report_directory',
