@@ -74,11 +74,12 @@ class PostgreSQLHandler(logging.Handler):
                 msg = "%s\n%s" % (msg, traceback)
             # we do not use record.levelname because it may have been changed by ColoredFormatter.
             levelname = logging.getLevelName(record.levelno)
+            ct_uid = getattr(ct, 'uid', None)
 
-            val = ('server', ct_db, record.name, levelname, msg, record.pathname[len(path_prefix)+1:], record.lineno, record.funcName)
+            val = ('server', ct_db, record.name, levelname, msg, record.pathname[len(path_prefix)+1:], record.lineno, record.funcName, ct_uid)
             cr.execute("""
-                INSERT INTO ir_logging(create_date, type, dbname, name, level, message, path, line, func)
-                VALUES (NOW() at time zone 'UTC', %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO ir_logging(create_date, type, dbname, name, level, message, path, line, func, create_uid)
+                VALUES (NOW() at time zone 'UTC', %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, val)
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, _NOTHING, DEFAULT = list(range(10))
@@ -100,6 +101,7 @@ class DBFormatter(logging.Formatter):
     def format(self, record):
         record.pid = os.getpid()
         record.dbname = getattr(threading.currentThread(), 'dbname', '?')
+        record.uid = getattr(threading.currentThread(), 'uid', '?')
         return logging.Formatter.format(self, record)
 
 class ColoredFormatter(DBFormatter):
@@ -122,7 +124,7 @@ def init_logger():
     resetlocale()
 
     # create a format for log messages and dates
-    format = '%(asctime)s %(pid)s %(levelname)s %(dbname)s %(name)s: %(message)s'
+    format = '%(asctime)s %(pid)s %(levelname)s %(dbname)s %(uid)s %(name)s: %(message)s'
     # Normal Handler on stderr
     handler = logging.StreamHandler()
 
@@ -135,7 +137,7 @@ def init_logger():
         else:
             handler = logging.handlers.SysLogHandler('/dev/log')
         format = '%s' % tools.config['syslog_prefix'] \
-                + ':%(dbname)s:%(levelname)s:%(name)s:%(message)s'
+                + ':%(dbname)s:%(uid)s:%(levelname)s:%(name)s:%(message)s'
 
     elif tools.config['logfile']:
         # LogFile Handler
