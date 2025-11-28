@@ -67,8 +67,23 @@ var ControlPanel = Widget.extend({
         };
 
         // Prevent the search dropdowns to close when clicking inside them
-        this.$el.on('click.bs.dropdown', '.o_search_options .dropdown-menu', function (e) {
+        this.$el.on('click.bs.dropdown mousedown.bs.dropdown', '.o_search_options .dropdown-menu', function (e) {
             e.stopPropagation();
+        });
+
+        // WebKit fix: Intercept Bootstrap's hide event and prevent dropdown closure
+        // when a select/input has focus (fixes premature closing on Chrome/Edge)
+        this.$el.on('hide.bs.dropdown', '.o_search_options', function (e) {
+            // Check if a select or input inside the dropdown menu currently has focus
+            var $dropdown = $(e.currentTarget);
+            var $focusedElement = $dropdown.find('.dropdown-menu select:focus, .dropdown-menu input:focus');
+
+            if ($focusedElement.length > 0) {
+                // Prevent Bootstrap from closing the dropdown
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
         });
 
         // By default, hide the ControlPanel and remove its contents from the DOM
