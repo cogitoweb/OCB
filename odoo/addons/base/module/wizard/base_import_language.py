@@ -4,7 +4,7 @@
 import base64
 import logging
 import os
-from tempfile import TemporaryFile
+from tempfile import NamedTemporaryFile
 
 from odoo import api, fields, models, tools, _
 from odoo.exceptions import UserError
@@ -30,9 +30,9 @@ class BaseLanguageImport(models.TransientModel):
         this = self[0]
         this = this.with_context(overwrite=this.overwrite)
         self.env["res.lang"].load_lang(lang=self.code, lang_name=self.name)
-        with TemporaryFile('w+') as buf:
+        with NamedTemporaryFile('wb+', suffix='.' + os.path.splitext(this.filename)[-1]) as buf:
             try:
-                buf.write(base64.decodestring(this.data))
+                buf.write(base64.decodebytes(this.data))
 
                 # now we determine the file format
                 buf.seek(0)
