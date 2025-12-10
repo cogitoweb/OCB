@@ -111,7 +111,14 @@ class account_register_payments(models.TransientModel):
         else:
             self.payment_difference = self._compute_total_invoices_amount() - self.amount
 
-    invoice_ids = fields.Many2many('account.invoice', 'account_invoice_payment_rel', 'payment_id', 'invoice_id', string="Invoices", copy=False, readonly=True)
+    invoice_ids = fields.Many2many(
+        comodel_name='account.invoice', 
+        # 'account_invoice_payment_rel', 
+        # 'payment_id', 
+        # 'invoice_id',
+        string="Invoices", copy=False, readonly=True
+    )
+
     payment_difference = fields.Monetary(compute='_compute_payment_difference', readonly=True)
     payment_difference_handling = fields.Selection([('open', 'Keep open'), ('reconcile', 'Mark invoice as fully paid')], default='open', string="Payment Difference", copy=False)
     writeoff_account_id = fields.Many2one('account.account', string="Difference Account", domain=[('deprecated', '=', False)], copy=False)
