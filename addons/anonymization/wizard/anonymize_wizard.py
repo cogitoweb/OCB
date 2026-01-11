@@ -226,7 +226,7 @@ class IrModelFieldsAnonymizeWizard(models.TransientModel):
 
         self.write({
             'msg': msg,
-            'file_export': base64.encodestring(fn.read()),
+            'file_export': base64.encodebytes(fn.read()),
         })
         fn.close()
 
@@ -268,7 +268,7 @@ class IrModelFieldsAnonymizeWizard(models.TransientModel):
 
         # reverse the anonymization:
         # load the pickle file content into a data structure:
-        data = pickle.loads(base64.decodestring(self.file_import))
+        data = pickle.loads(base64.decodebytes(self.file_import))
 
         fixes = self.env['ir.model.fields.anonymization.migration.fix'].search_read([
             ('target_version', '=', '.'.join(map(str, version_info[:2])))
