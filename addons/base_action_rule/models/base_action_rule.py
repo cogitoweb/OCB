@@ -12,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models, SUPERUSER_ID
 from odoo.modules.registry import Registry
-from odoo.tools.safe_eval import safe_eval
+from odoo.tools.safe_eval import safe_eval, time as safe_time, datetime as safe_datetime, dateutil as safe_dateutil
 
 _logger = logging.getLogger(__name__)
 
@@ -146,9 +146,9 @@ class BaseActionRule(models.Model):
             :returns: dict -- evaluation context given to safe_eval
         """
         return {
-            'datetime': datetime,
-            'dateutil': dateutil,
-            'time': time,
+            'datetime': safe_datetime,
+            'dateutil': safe_dateutil,
+            'time': safe_time,
             'uid': self.env.uid,
             'user': self.env.user,
         }
