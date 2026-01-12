@@ -36,7 +36,7 @@ __all__ = ['test_expr', 'safe_eval', 'const_eval']
 # The time module is usually already provided in the safe_eval environment
 # but some code, e.g. datetime.datetime.now() (Windows/Python 2.5.2, bug
 # lp:703841), does import time.
-_ALLOWED_MODULES = ['_strptime', 'math', 'time']
+_ALLOWED_MODULES = ['_strptime', 'math', 'time', 'datetime']
 
 # Mock __import__ function, as called by cpython's import emulator `PyImport_Import` inside
 # timemodule.c, _datetimemodule.c and others.
@@ -423,7 +423,7 @@ def check_values(d):
     if not d:
         return d
     for v in d.values():
-        if isinstance(v, types.ModuleType) and "odoo" not in str(v):
+        if isinstance(v, types.ModuleType) and "odoo" not in str(v) and str(v) not in _ALLOWED_MODULES:
             raise TypeError(f"""Module {v} can not be used in evaluation contexts
 
 Prefer providing only the items necessary for your intended use.
