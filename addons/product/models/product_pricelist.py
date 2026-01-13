@@ -49,7 +49,7 @@ class Pricelist(models.Model):
                        FROM ((
                                 SELECT pr.id, pr.name
                                 FROM product_pricelist pr JOIN
-                                     res_currency cur ON 
+                                     res_currency cur ON
                                          (pr.currency_id = cur.id)
                                 WHERE pr.name || ' (' || cur.name || ')' = %(name)s
                             )
@@ -62,7 +62,7 @@ class Pricelist(models.Model):
                                         tr.name = 'product.pricelist,name' AND
                                         tr.lang = %(lang)s
                                      ) JOIN
-                                     res_currency cur ON 
+                                     res_currency cur ON
                                          (pr.currency_id = cur.id)
                                 WHERE tr.value || ' (' || cur.name || ')' = %(name)s
                             )
@@ -434,7 +434,7 @@ class PricelistItem(models.Model):
         if self.categ_id:
             self.name = _("Category: %s") % (self.categ_id.name)
         elif self.product_tmpl_id:
-            self.name = self.product_tmpl_id.name
+            self.name = "[%s] %s" % (self.product_tmpl_id.default_code, self.product_tmpl_id.name)
         elif self.product_id:
             self.name = self.product_id.display_name.replace('[%s]' % self.product_id.code, '')
         else:
