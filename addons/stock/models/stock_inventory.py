@@ -161,7 +161,7 @@ class Inventory(models.Model):
                 self.lot_id
             )
             raise UserError(_('The selected inventory options are not coherent.'))
-        if self.filter not in ('owner', 'product_owner') and self.partner_id:
+        if self.filter not in ('owner', 'product_owner', 'none') and self.partner_id:
             _logger.warning(
                 "Inventory incoherent filter: self.filter not in ('owner', 'product_owner') and self.partner_id %s",
                 self.partner_id
