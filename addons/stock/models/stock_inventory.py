@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
+import logging
 
 from odoo import api, fields, models, _
 from odoo.addons import decimal_precision as dp
 from odoo.exceptions import UserError
 from odoo.tools import float_utils
+
+_logger = logging.getLogger(__name__)
 
 
 class Inventory(models.Model):
@@ -147,12 +150,28 @@ class Inventory(models.Model):
         if self.filter == 'none' and self.product_id and self.location_id and self.lot_id:
             return
         if self.filter not in ('product', 'product_owner') and self.product_id:
+            _logger.warning(
+                "Inventory incoherent filter: self.filter not in ('product', 'product_owner') and self.product_id %s",
+                self.product_id
+            )
             raise UserError(_('The selected inventory options are not coherent.'))
         if self.filter != 'lot' and self.lot_id:
+            _logger.warning(
+                "Inventory incoherent filter: self.filter != 'lot' and self.lot_id %s",
+                self.lot_id
+            )
             raise UserError(_('The selected inventory options are not coherent.'))
         if self.filter not in ('owner', 'product_owner') and self.partner_id:
+            _logger.warning(
+                "Inventory incoherent filter: self.filter not in ('owner', 'product_owner') and self.partner_id %s",
+                self.partner_id
+            )
             raise UserError(_('The selected inventory options are not coherent.'))
         if self.filter != 'pack' and self.package_id:
+            _logger.warning(
+                "Inventory incoherent filter: self.filter != 'pack' and self.package_id %s",
+                self.package_id
+            )
             raise UserError(_('The selected inventory options are not coherent.'))
 
     @api.multi
