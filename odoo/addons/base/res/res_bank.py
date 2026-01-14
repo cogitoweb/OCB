@@ -89,7 +89,7 @@ class ResPartnerBank(models.Model):
             if args[pos][0] == 'acc_number':
                 op = args[pos][1]
                 value = args[pos][2]
-                if hasattr(value, '__iter__'):
+                if isinstance(value, (list, tuple)):  # ✅ Corretto!
                     value = [sanitize_account_number(i) for i in value]
                 else:
                     value = sanitize_account_number(value)
