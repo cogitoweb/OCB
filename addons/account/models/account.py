@@ -1132,14 +1132,19 @@ class AccountTax(models.Model):
             round_tax = bool(self.env.context['round'])
             round_total = bool(self.env.context['round'])
 
-        if not round_tax:
-            prec += 5
+        # [cgt-edit] moving this below to avoid change precision of the total
+        # if not round_tax:
+        #    prec += 5
 
         base_values = self.env.context.get('base_values')
         if not base_values:
             total_excluded = total_included = base = round(price_unit * quantity, prec)
         else:
             total_excluded, total_included, base = base_values
+
+        # [cgt-edit] here
+        if not round_tax:
+            prec += 5
 
         # Sorting key is mandatory in this case. When no key is provided, sorted() will perform a
         # search. However, the search method is overridden in account.tax in order to add a domain
