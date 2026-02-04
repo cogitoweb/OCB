@@ -641,12 +641,22 @@ def trans_export(lang, modules, buffer, format, cr):
 
     def _process(format, modules, rows, buffer, lang):
         if format == 'csv':
-            writer = csv.writer(buffer, 'UNIX')
+            # Wrap binary buffer with text wrapper for Python 3
+            import io
+            text_buffer = io.TextIOWrapper(
+                buffer, encoding='utf-8', newline='', write_through=True
+            )
+            writer = csv.writer(text_buffer, 'UNIX')
             # write header first
-            writer.writerow(("module","type","name","res_id","src","value","comments"))
+            writer.writerow((
+                "module", "type", "name", "res_id", "src", "value",
+                "comments"
+            ))
             for module, type, name, res_id, src, trad, comments in rows:
                 comments = '\n'.join(comments)
                 writer.writerow((module, type, name, res_id, src, trad, comments))
+            # Detach to avoid closing the underlying buffer
+            text_buffer.detach()
 
         elif format == 'po':
             writer = PoFile(buffer)
@@ -1042,7 +1052,14 @@ def trans_load_data(cr, fileobj, fileformat, lang, lang_name=None, verbose=True,
         # now, the serious things: we read the language file
         fileobj.seek(0)
         if fileformat == 'csv':
-            reader = csv.reader(fileobj, quotechar='"', delimiter=',')
+            # Wrap binary file with text wrapper for Python 3
+            import io
+            text_fileobj = io.TextIOWrapper(
+                fileobj, encoding='utf-8', newline=''
+            )
+            reader = csv.reader(
+                text_fileobj, quotechar='"', delimiter=','
+            )
             # read the first line of the file (it contains columns titles)
             for row in reader:
                 fields = row
