@@ -20,13 +20,13 @@ class BaseConfigSettings(models.TransientModel):
 
     @api.model
     def get_default_company_share_product(self, fields):
-        product_rule = self.env.ref('product.product_comp_rule')
         return {
-            'company_share_product': not bool(product_rule.active)
+            'company_share_product': True
         }
 
     @api.multi
     def set_auth_company_share_product(self):
         self.ensure_one()
-        product_rule = self.env.ref('product.product_comp_rule')
-        product_rule.write({'active': not bool(self.company_share_product)})
+        product_rule = self.env.ref('product.product_comp_rule', raise_if_not_found=False)
+        if product_rule:
+            product_rule.write({'active': True})

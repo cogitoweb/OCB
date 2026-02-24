@@ -68,7 +68,7 @@ class BaseConfigSettings(models.TransientModel):
     @api.model
     def get_default_company_share_partner(self, fields):
         return {
-            'company_share_partner': not self.env.ref('base.res_partner_rule').active
+            'company_share_partner': True
         }
 
     @api.multi
