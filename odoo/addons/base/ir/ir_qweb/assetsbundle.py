@@ -562,7 +562,7 @@ class StylesheetAsset(WebAsset):
 
             return content
         except AssetError as e:
-            self.bundle.css_errors.append(e.message)
+            self.bundle.css_errors.append(str(e))
             return ''
 
     def minify(self):
