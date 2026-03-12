@@ -79,7 +79,7 @@ def _mask_dsn_credentials(dsn_info):
         if 'password' in masked:
             masked['password'] = '***MASKED***'
         return masked
-    
+
     # For URI format, mask password portion
     import re
     return re.sub(r'://([^:]+):([^@]+)@', r'://\1:***@', str(dsn_info))
@@ -245,7 +245,7 @@ class Cursor(object):
             res = self._obj.execute(query, params)
         except Exception:
             if self._default_log_exceptions if log_exceptions is None else log_exceptions:
-                _logger.info("bad query: %s", self._obj.query or query)
+                _logger.info("bad query: %s", str(self._obj.query or query))
             raise
 
         # simple query count is always computed
@@ -333,7 +333,7 @@ class Cursor(object):
         if not leak and not self._cnx.closed:
             try:
                 # Only rollback if we're in a transaction and haven't committed
-                if (hasattr(self._cnx, 'status') and 
+                if (hasattr(self._cnx, 'status') and
                     self._cnx.status == psycopg2.extensions.STATUS_IN_TRANSACTION and
                     not self._transaction_committed):
                     self._cnx.rollback()
@@ -543,7 +543,7 @@ class ConnectionPool(object):
 
         The connections are *not* automatically closed. Only a close_db()
         can trigger that.
-        
+
         REFACTORED: Uses efficient hash-based lookup, granular locking,
         and connection health monitoring.
     """
@@ -555,12 +555,12 @@ class ConnectionPool(object):
         self._maxconn = max(maxconn, 1)
         self._lock = threading.RLock()  # Main pool lock
         self._dsn_locks = {}  # Per-DSN locks for granular control
-        
+
         # Health monitoring parameters
         self._health_check_interval = 300  # 5 minutes
         self._max_connection_age = 3600    # 1 hour
         self._last_cleanup = 0
-        
+
         # Connection statistics
         self._stats = {
             'created': 0,
@@ -592,7 +592,7 @@ class ConnectionPool(object):
         """Check if connection is alive and functional"""
         if cnx.closed:
             return False
-        
+
         try:
             # Quick health check with minimal query
             with cnx.cursor() as cursor:
@@ -605,30 +605,30 @@ class ConnectionPool(object):
     def _cleanup_dead_connections(self):
         """Remove dead and aged connections from pool"""
         current_time = time.time()
-        
+
         for dsn_key, connections in list(self._connections.items()):
             healthy_connections = deque()
-            
+
             for cnx, used, created_time in connections:
                 # Skip connections currently in use
                 if used:
                     healthy_connections.append((cnx, used, created_time))
                     continue
-                
+
                 # Remove leaked connections
                 if getattr(cnx, 'leaked', False):
                     if not cnx.closed:
                         cnx.close()
                     self._stats['closed_dead'] += 1
                     continue
-                
+
                 # Remove aged connections
                 if current_time - created_time > self._max_connection_age:
                     if not cnx.closed:
                         cnx.close()
                     self._stats['closed_aged'] += 1
                     continue
-                
+
                 # Check health
                 if self._is_connection_healthy(cnx):
                     healthy_connections.append((cnx, used, created_time))
@@ -636,7 +636,7 @@ class ConnectionPool(object):
                     if not cnx.closed:
                         cnx.close()
                     self._stats['closed_dead'] += 1
-            
+
             if healthy_connections:
                 self._connections[dsn_key] = healthy_connections
             else:
@@ -661,7 +661,7 @@ class ConnectionPool(object):
         :rtype: PsycoConnection
         """
         dsn_key = self._get_dsn_key(connection_info)
-        
+
         with self._connection_context(dsn_key):
             # Periodic cleanup (less frequent to avoid overhead)
             current_time = time.time()
@@ -681,7 +681,7 @@ class ConnectionPool(object):
                             if not cnx.closed:
                                 cnx.close()
                             continue
-                        
+
                         # Mark as used
                         connections[i] = (cnx, True, created_time)
                         self._used_connections.add(cnx)
@@ -706,7 +706,7 @@ class ConnectionPool(object):
                                 break
                         if freed:
                             break
-                
+
                 # If still at max capacity, raise error
                 if not freed and sum(len(conns) for conns in self._connections.values()) >= self._maxconn:
                     raise PoolError('The Connection Pool Is Full')
@@ -719,13 +719,13 @@ class ConnectionPool(object):
             except psycopg2.Error:
                 _logger.info('Connection to the database failed')
                 raise
-            
+
             cnx._original_dsn = connection_info
-            
+
             # Add to pool
             if dsn_key not in self._connections:
                 self._connections[dsn_key] = deque()
-            
+
             self._connections[dsn_key].append((cnx, True, current_time))
             self._used_connections.add(cnx)
             self._stats['created'] += 1
@@ -736,11 +736,11 @@ class ConnectionPool(object):
         """Return connection to pool"""
         connection_returned = False
         dsn_key = self._get_dsn_key(getattr(connection, '_original_dsn', {}))
-        
+
         with self._connection_context(dsn_key):
             # Remove from used set
             self._used_connections.discard(connection)
-            
+
             if dsn_key in self._connections:
                 connections = self._connections[dsn_key]
                 for i, (cnx, used, created_time) in enumerate(connections):
@@ -765,7 +765,7 @@ class ConnectionPool(object):
         """Close all connections, optionally filtered by DSN"""
         count = 0
         last_dsn = None
-        
+
         with self._lock:
             if dsn is not None:
                 # Close connections for specific DSN
@@ -790,9 +790,9 @@ class ConnectionPool(object):
                         count += 1
                 self._connections.clear()
                 self._dsn_locks.clear()
-            
+
             self._used_connections.clear()
-        
+
         dsn_desc = f"to {last_dsn}" if last_dsn else ""
         _logger.info('%r: Closed %d connections %s', self, count, dsn_desc)
 
@@ -853,27 +853,27 @@ def connection_info_for(db_or_uri):
     """
     if not isinstance(db_or_uri, str):
         raise ValueError("Database identifier must be a string")
-    
+
     if db_or_uri.startswith(('postgresql://', 'postgres://')):
         try:
             # extract db from uri with validation
             us = urllib.parse.urlsplit(db_or_uri)
-            
+
             # Validate hostname to prevent injection
             if us.hostname and not all(c.isalnum() or c in '.-_' for c in us.hostname):
                 raise ValueError("Invalid hostname in database URI")
-            
+
             if len(us.path) > 1:
                 db_name = us.path[1:].strip('/')
             elif us.username:
                 db_name = us.username
             else:
                 db_name = us.hostname
-                
+
             # Sanitize database name
             if db_name and not re.match(r'^[a-zA-Z0-9_-]+$', db_name):
                 raise ValueError("Invalid database name format")
-                
+
             return db_name, {'dsn': db_or_uri}
         except Exception as e:
             raise ValueError(f"Invalid database URI format: {e}")
