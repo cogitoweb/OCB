@@ -12,6 +12,7 @@ from email.utils import formataddr
 from odoo import _, api, fields, models
 from odoo import tools
 from odoo.addons.base.ir.ir_mail_server import MailDeliveryException
+from odoo.addons.base.res.res_partner import Partner
 from odoo.tools.safe_eval import safe_eval
 
 _logger = logging.getLogger(__name__)
@@ -173,12 +174,12 @@ class MailMail(models.Model):
         return body
 
     @api.multi
-    def send_get_mail_to(self, partner=None):
+    def send_get_mail_to(self, partner: Partner = None):
         """Forge the email_to with the following heuristic:
           - if 'partner', recipient specific (Partner Name <email>)
           - else fallback on mail.email_to splitting """
         self.ensure_one()
-        if partner:
+        if partner and partner.name and partner.email:
             email_to = [formataddr((partner.name, partner.email))]
         else:
             email_to = tools.email_split_and_format(self.email_to)
