@@ -179,6 +179,9 @@ class BaseActionRule(models.Model):
 
     def _process(self, records):
         """ Process action ``self`` on the ``records`` that have not been done yet. """
+        if self.act_user_id:
+            self = self.sudo(self.act_user_id.id)
+
         # filter out the records on which self has already been done
         action_done = self._context['__action_done']
         records_done = action_done.get(self, records.browse())
