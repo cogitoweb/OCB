@@ -254,6 +254,12 @@ class Module(models.Model):
                                    help='An auto-installable module is automatically installed by the '
                                         'system when all its dependencies are satisfied. '
                                         'If the module has no dependency, it is always installed.')
+    debug_logging_enabled = fields.Boolean(
+        'Debug Logging Enabled',
+        default=False,
+        help='Enable DEBUG level for this module logger at runtime. '
+             'Applied live by the logging subsystem without server restart.',
+    )
     state = fields.Selection(STATES, string='Status', default='uninstalled', readonly=True, index=True)
     demo = fields.Boolean('Demo Data', default=False, readonly=True)
     license = fields.Selection([
@@ -412,6 +418,12 @@ class Module(models.Model):
         :rtype: dict[str, object]
         """
         return self._button_immediate_function(type(self).button_install)
+
+    @api.multi
+    def button_toggle_debug_logging(self):
+        for module in self:
+            module.write({'debug_logging_enabled': not module.debug_logging_enabled})
+        return True
 
     @api.multi
     def button_install_cancel(self):

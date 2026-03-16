@@ -9,6 +9,7 @@ import pprint
 from . import release
 import sys
 import threading
+import time
 
 import psycopg2
 
@@ -51,7 +52,113 @@ def LocalService(name):
                 with registry.cursor() as cr:
                     return registry['ir.actions.report.xml']._lookup_report(cr, name[len('report.'):])
 
+
 path_prefix = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
+
+MODULE_DEBUG_REFRESH_SECONDS = 10.0
+_module_debug_lock = threading.RLock()
+_module_debug_state = {}
+_module_debug_thread_state = threading.local()
+
+
+def _get_module_debug_state(dbname):
+    state = _module_debug_state.get(dbname)
+    if state is None:
+        state = {
+            'last_refresh': 0.0,
+            'enabled_loggers': set(),
+            'previous_levels': {},
+        }
+        _module_debug_state[dbname] = state
+    return state
+
+
+def _fetch_enabled_module_loggers(dbname):
+    """Return logger names enabled for debug from ir_module_module flag.
+
+    The schema may not yet include `debug_logging_enabled` on fresh code
+    deployment before module upgrade, therefore SQL errors are intentionally
+    ignored.
+    """
+    enabled_loggers = set()
+    with tools.ignore(Exception), tools.mute_logger('odoo.sql_db'), sql_db.db_connect(dbname, allow_uri=True).cursor() as cr:
+        cr.execute(
+            """
+                SELECT name
+                  FROM ir_module_module
+                 WHERE debug_logging_enabled = true
+            """
+        )
+        for row in cr.fetchall():
+            module_name = row[0]
+            if not module_name:
+                continue
+            enabled_loggers.add(module_name)
+            enabled_loggers.add('odoo.addons.%s' % module_name)
+    return enabled_loggers
+
+
+def refresh_module_debug_levels(dbname=None, force=False):
+    if not dbname:
+        return
+
+    now = time.time()
+
+    with _module_debug_lock:
+        state = _get_module_debug_state(dbname)
+        if not force and (now - state['last_refresh']) < MODULE_DEBUG_REFRESH_SECONDS:
+            return
+        state['last_refresh'] = now
+
+    _logger.debug('module_debug_refresh_start db=%s force=%s', dbname, force)
+    target_loggers = _fetch_enabled_module_loggers(dbname)
+    _logger.debug(
+        'module_debug_refresh_fetched db=%s logger_count=%s loggers=%s',
+        dbname,
+        len(target_loggers),
+        sorted(target_loggers),
+    )
+
+    with _module_debug_lock:
+        state = _get_module_debug_state(dbname)
+        currently_enabled = set(state['enabled_loggers'])
+
+        to_enable = target_loggers - currently_enabled
+        to_disable = currently_enabled - target_loggers
+
+        for logger_name in to_enable:
+            logger = logging.getLogger(logger_name)
+            state['previous_levels'][logger_name] = logger.level
+            logger.setLevel(logging.DEBUG)
+
+        for logger_name in to_disable:
+            logger = logging.getLogger(logger_name)
+            previous_level = state['previous_levels'].pop(logger_name, logging.NOTSET)
+            logger.setLevel(previous_level)
+
+        state['enabled_loggers'] = target_loggers
+        _logger.debug(
+            'module_debug_refresh_applied db=%s enabled=%s disabled=%s active=%s',
+            dbname,
+            sorted(to_enable),
+            sorted(to_disable),
+            sorted(state['enabled_loggers']),
+        )
+
+
+class ModuleDebugRefreshFilter(logging.Filter):
+    """Keep module-level debug logger map in sync during normal logging flow."""
+
+    def filter(self, record):
+        if getattr(_module_debug_thread_state, 'in_refresh', False):
+            return True
+
+        _module_debug_thread_state.in_refresh = True
+        try:
+            refresh_module_debug_levels(getattr(threading.currentThread(), 'dbname', None))
+        finally:
+            _module_debug_thread_state.in_refresh = False
+        return True
 
 class PostgreSQLHandler(logging.Handler):
     """ PostgreSQL Logging Handler will store logs in the database, by default
@@ -175,8 +282,10 @@ def init_logger():
     else:
         formatter = DBFormatter(format)
     handler.setFormatter(formatter)
-
-    logging.getLogger().addHandler(handler)
+    module_debug_filter = ModuleDebugRefreshFilter()
+    handler.addFilter(module_debug_filter)
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
 
     if tools.config['log_db']:
         db_levels = {
@@ -188,7 +297,8 @@ def init_logger():
         }
         postgresqlHandler = PostgreSQLHandler()
         postgresqlHandler.setLevel(int(db_levels.get(tools.config['log_db_level'], tools.config['log_db_level'])))
-        logging.getLogger().addHandler(postgresqlHandler)
+        postgresqlHandler.addFilter(module_debug_filter)
+        root_logger.addHandler(postgresqlHandler)
 
     # Configure loggers levels
     pseudo_config = PSEUDOCONFIG_MAPPER.get(tools.config['log_level'], [])

@@ -73,6 +73,11 @@
                 <form create="0" edit="0" string="Module">
                     <link rel="stylesheet" href="/base/static/src/css/description.css"></link>
                     <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="button_toggle_debug_logging" type="object" class="oe_stat_button" icon="fa-bug">
+                            <field name="debug_logging_enabled" widget="boolean_button" options="{'terminology': {'string_true': 'Debug on', 'hover_true': 'Turn off','string_false': 'Debug off', 'hover_false': 'Turn on'}}"/>
+                        </button>
+                    </div>
                     <field name="icon_image" widget="image" class="oe_avatar"/>
                     <div class="oe_title">
                         <h1><field name="shortdesc" placeholder="Module Name"/></h1>
