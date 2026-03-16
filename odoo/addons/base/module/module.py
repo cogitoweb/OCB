@@ -227,6 +227,19 @@ class Module(models.Model):
                 with tools.file_open(path, 'rb') as image_file:
                     module.icon_image = base64.b64encode(image_file.read())
 
+    def _get_debug_logging_enabled(self):
+        param_value = self.env['ir.config_parameter'].sudo().get_param(
+            'logging.module_debug.enabled_modules',
+            ''
+        )
+        enabled_modules = set(
+            name.strip()
+            for name in (param_value or '').split(',')
+            if name and name.strip()
+        )
+        for module in self:
+            module.debug_logging_enabled = module.name in enabled_modules
+
     name = fields.Char('Technical Name', readonly=True, required=True, index=True)
     category_id = fields.Many2one('ir.module.category', string='Category', readonly=True, index=True)
     shortdesc = fields.Char('Module Name', readonly=True, translate=True)
@@ -256,9 +269,10 @@ class Module(models.Model):
                                         'If the module has no dependency, it is always installed.')
     debug_logging_enabled = fields.Boolean(
         'Debug Logging Enabled',
-        default=False,
+        compute='_get_debug_logging_enabled',
+        readonly=True,
         help='Enable DEBUG level for this module logger at runtime. '
-             'Applied live by the logging subsystem without server restart.',
+             'State is stored in ir.config_parameter (no base schema change).',
     )
     state = fields.Selection(STATES, string='Status', default='uninstalled', readonly=True, index=True)
     demo = fields.Boolean('Demo Data', default=False, readonly=True)
@@ -421,8 +435,23 @@ class Module(models.Model):
 
     @api.multi
     def button_toggle_debug_logging(self):
+        config = self.env['ir.config_parameter'].sudo()
+        param_key = 'logging.module_debug.enabled_modules'
+        param_value = config.get_param(param_key, '')
+        enabled_modules = set(
+            name.strip()
+            for name in (param_value or '').split(',')
+            if name and name.strip()
+        )
+
         for module in self:
-            module.write({'debug_logging_enabled': not module.debug_logging_enabled})
+            if module.name in enabled_modules:
+                enabled_modules.remove(module.name)
+            else:
+                enabled_modules.add(module.name)
+
+        config.set_param(param_key, ','.join(sorted(enabled_modules)))
+        self.invalidate_cache(['debug_logging_enabled'], self.ids)
         return True
 
     @api.multi

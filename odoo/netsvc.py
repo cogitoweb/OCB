@@ -74,23 +74,26 @@ def _get_module_debug_state(dbname):
 
 
 def _fetch_enabled_module_loggers(dbname):
-    """Return logger names enabled for debug from ir_module_module flag.
+    """Return logger names enabled for debug from ir_config_parameter.
 
-    The schema may not yet include `debug_logging_enabled` on fresh code
-    deployment before module upgrade, therefore SQL errors are intentionally
-    ignored.
+    This avoids any dependency on custom columns in base tables, so startup
+    cannot fail because a module upgrade was not executed yet.
     """
     enabled_loggers = set()
     with tools.ignore(Exception), tools.mute_logger('odoo.sql_db'), sql_db.db_connect(dbname, allow_uri=True).cursor() as cr:
         cr.execute(
             """
-                SELECT name
-                  FROM ir_module_module
-                 WHERE debug_logging_enabled = true
+                SELECT value
+                  FROM ir_config_parameter
+                 WHERE key = 'logging.module_debug.enabled_modules'
+                 LIMIT 1
             """
         )
-        for row in cr.fetchall():
-            module_name = row[0]
+        row = cr.fetchone()
+        raw_value = row[0] if row else ''
+        module_names = [name.strip() for name in (raw_value or '').split(',') if name.strip()]
+
+        for module_name in module_names:
             if not module_name:
                 continue
             enabled_loggers.add(module_name)
