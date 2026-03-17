@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 import logging
-import pypdf
+import PyPDF2
 import xml.dom.minidom
 import zipfile
 
@@ -103,16 +103,19 @@ class IrAttachment(models.Model):
                 pass
         return buf
 
-    def _index_pdf(self, bin_data):
+    def _index_pdf(self, bin_data: bytes):
         '''Index PDF documents'''
 
+        # extractText gives very bad results for indexing, hence we don't index PDF anymore. A
+        # better alternative is probably PDFMiner.six, but not for stable.
+        # See POC at https://github.com/odoo/odoo/pull/27568.
         buf = ""
         if bin_data.startswith(b'%PDF-'):
             f = io.BytesIO(bin_data)
             try:
-                pdf = pypdf.PdfReader(f)
+                pdf = PyPDF2.PdfFileReader(f, overwriteWarnings=False)
                 for page in pdf.pages:
-                    buf += page.extract_text()
+                    buf += page.extractText()
             except Exception:
                 pass
         return buf
