@@ -39,11 +39,11 @@ def format_date(env, date, pattern=False):
 def cmp(a, b):
     return (a > b) - (a < b)
 
-def format_tz(env, dt, tz=False, format=False):
+def format_tz(env, dt: str, tz=False, format=False):
     record_user_timestamp = env.user.sudo().with_context(tz=tz or env.user.sudo().tz or 'UTC')
     timestamp = datetime.datetime.strptime(dt, tools.DEFAULT_SERVER_DATETIME_FORMAT)
 
-    ts = fields.Datetime.context_timestamp(record_user_timestamp, timestamp)
+    ts: datetime.datetime = fields.Datetime.context_timestamp(record_user_timestamp, timestamp)
 
     # Babel allows to format datetime in a specific language without change locale
     # So month 1 = January in English, and janvier in French
@@ -65,8 +65,8 @@ def format_tz(env, dt, tz=False, format=False):
         format_date = langs.date_format or '%B-%d-%Y'
         format_time = langs.time_format or '%I-%M %p'
 
-        fdate = ts.strftime(format_date).decode('utf-8')
-        ftime = ts.strftime(format_time).decode('utf-8')
+        fdate = ts.strftime(format_date)
+        ftime = ts.strftime(format_time)
         return "%s %s%s" % (fdate, ftime, (' (%s)' % tz) if tz else '')
 
 def format_amount(env, amount, currency):
