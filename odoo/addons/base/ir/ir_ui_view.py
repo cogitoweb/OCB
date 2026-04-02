@@ -109,7 +109,7 @@ def get_view_arch_from_file(filename, xmlid):
         if node.tag == 'record':
             field = node.find('field[@name="arch"]')
             _fix_multiple_roots(field)
-            inner = ''.join([etree.tostring(child) for child in field.iterchildren()])
+            inner = ''.join([etree.tostring(child, encoding='unicode') for child in field.iterchildren()])
             return field.text + inner
         elif node.tag == 'template':
             # The following dom operations has been copied from convert.py's _tag_template()
@@ -119,7 +119,7 @@ def get_view_arch_from_file(filename, xmlid):
             else:
                 node.tag = 'data'
             node.attrib.pop('id', None)
-            return etree.tostring(node)
+            return etree.tostring(node, encoding='unicode')
     _logger.warning("Could not find view arch definition in file '%s' for xmlid '%s'", filename, xmlid)
     return None
 
