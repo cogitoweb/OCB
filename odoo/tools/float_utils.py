@@ -35,12 +35,6 @@ def _float_check_precision(precision_digits: int | None = None, precision_roundi
 def float_to_decimal(value: float) -> Decimal:
     """Converts a float to Decimal with the highest possible precision"""
     decimal_value = Decimal(format(value))
-    significant_figures = len(decimal_value.as_tuple().digits)
-    if significant_figures > MAX_SIGNIFICANT_FIGURES:
-        _logger.warning(f"""
-            Float value {value} has more than {MAX_SIGNIFICANT_FIGURES} significant figures.
-            Consider using a Decimal directly
-        """)
     return decimal_value
 
 
