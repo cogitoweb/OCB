@@ -3,12 +3,13 @@
 
 import math
 import logging
-from decimal import Decimal, ROUND_HALF_UP, ROUND_05UP, ROUND_UP, getcontext
+from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN, ROUND_UP, getcontext
 from typing import Literal
 
 rounding_map = {
     'HALF-UP': ROUND_HALF_UP,
     'UP': ROUND_UP,
+    'HALF-EVEN': ROUND_HALF_EVEN,
 }
 
 MAX_SIGNIFICANT_FIGURES = 16
@@ -47,7 +48,7 @@ def float_round(
     value: float,
     precision_digits: int | None = None,
     precision_rounding: float | None = None,
-    rounding_method='HALF-UP'
+    rounding_method: Literal['HALF-UP', 'UP', 'HALF-EVEN'] = 'HALF-UP'
 ) -> float:
     """Return ``value`` rounded to ``precision_digits`` decimal digits,
        minimizing IEEE-754 floating point representation errors, and applying
