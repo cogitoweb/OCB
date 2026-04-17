@@ -19,6 +19,7 @@ import psycopg2
 from odoo.sql_db import LazyCursor
 from odoo.tools import float_precision, float_repr, float_round, frozendict, \
                        html_sanitize, human_size, pg_varchar, ustr, OrderedSet, pycompat
+from odoo.tools.date_utils import json_default
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DATE_FORMAT
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT as DATETIME_FORMAT
 from odoo.tools.translate import html_translate, _
@@ -2513,7 +2514,7 @@ class Serialized(Field):
     column_type = ('text', 'text')
 
     def convert_to_column(self, value, record):
-        return json.dumps(value)
+        return json.dumps(value, default=json_default)
 
     def convert_to_cache(self, value, record, validate=True):
         # cache format: dict
@@ -2530,7 +2531,7 @@ class Json(Field):
     column_type = ('jsonb', 'jsonb')
 
     def convert_to_column(self, value, record):
-        return json.dumps(value)
+        return json.dumps(value, default=json_default)
 
     def convert_to_cache(self, value, record, validate=True):
         # cache format: dict
