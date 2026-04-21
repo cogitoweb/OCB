@@ -8,6 +8,7 @@ from dateutil import parser
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 import logging
+from functools import cmp_to_key
 from operator import itemgetter
 import pytz
 import re
@@ -1102,7 +1103,7 @@ class Meeting(models.Model):
             sort_params = uniq([comp if comp not in ['start', 'start_date', 'start_datetime'] else 'sort_start' for comp in sort_params])
             sort_params = uniq([comp if comp not in ['-start', '-start_date', '-start_datetime'] else '-sort_start' for comp in sort_params])
             comparers = [((itemgetter(col[1:]), -1) if col[0] == '-' else (itemgetter(col), 1)) for col in sort_params]
-            ids = [r['id'] for r in sorted(result_data, key=comparer)]
+            ids = [r['id'] for r in sorted(result_data, key=cmp_to_key(comparer))]
 
         return ids
 
