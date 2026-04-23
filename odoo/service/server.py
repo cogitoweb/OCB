@@ -497,7 +497,7 @@ class ThreadedServer(CommonServer):
                             _logger.warning('cron%d encountered an Exception:', number, exc_info=True)
                         thread.start_time = None
         while True:
-            conn = odoo.sql_db.db_connect('postgres')
+            conn = odoo.sql_db.db_connect(config['db_name'] or 'postgres')
             with contextlib.closing(conn.cursor()) as cr:
                 _run_cron(cr)
                 cr._cnx.close()
@@ -1251,7 +1251,7 @@ class WorkerCron(Worker):
         if self.multi.socket:
             self.multi.socket.close()
 
-        dbconn = odoo.sql_db.db_connect('postgres')
+        dbconn = odoo.sql_db.db_connect(config['db_name'] or 'postgres')
         self.dbcursor = dbconn.cursor()
         # LISTEN / NOTIFY doesn't work in recovery mode
         self.dbcursor.execute("SELECT pg_is_in_recovery()")

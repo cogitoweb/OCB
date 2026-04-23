@@ -526,7 +526,7 @@ class ir_cron(models.Model):
         The ODOO_NOTIFY_CRON_CHANGES environment variable allows to force the notifydb on both
         ir_cron modification and on trigger creation (regardless of call_at)
         """
-        with odoo.sql_db.db_connect('postgres').cursor() as cr:
+        with odoo.sql_db.db_connect(odoo.tools.config['db_name'] or 'postgres').cursor() as cr:
             if ODOO_NOTIFY_FUNCTION:
                 query = sql.SQL("SELECT {}('cron_trigger', %s)").format(sql.Identifier(ODOO_NOTIFY_FUNCTION))
             else:
