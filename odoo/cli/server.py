@@ -146,20 +146,24 @@ def main(args):
     if config['db_name']:
         preload = config['db_name'].split(',')
         for db_name in preload:
-            try:
-                odoo.service.db._create_empty_database(db_name)
-                config['init']['base'] = True
-            except ProgrammingError as err:
-                if err.pgcode == errorcodes.INSUFFICIENT_PRIVILEGE:
-                    # We use an INFO loglevel on purpose in order to avoid
-                    # reporting unnecessary warnings on build environment
-                    # using restricted database access.
-                    _logger.info("Could not determine if database %s exists, "
-                                 "skipping auto-creation: %s", db_name, err)
-                else:
-                    raise err
-            except odoo.service.db.DatabaseExists:
+            if odoo.service.db.exp_db_exist(db_name):
+                # DB is already accessible — skip the postgres maintenance DB entirely.
                 pass
+            else:
+                try:
+                    odoo.service.db._create_empty_database(db_name)
+                    config['init']['base'] = True
+                except ProgrammingError as err:
+                    if err.pgcode == errorcodes.INSUFFICIENT_PRIVILEGE:
+                        # We use an INFO loglevel on purpose in order to avoid
+                        # reporting unnecessary warnings on build environment
+                        # using restricted database access.
+                        _logger.info("Could not determine if database %s exists, "
+                                     "skipping auto-creation: %s", db_name, err)
+                    else:
+                        raise err
+                except odoo.service.db.DatabaseExists:
+                    pass
 
     if config["translate_out"]:
         export_translation()
