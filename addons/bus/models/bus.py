@@ -119,7 +119,7 @@ class ImBus(models.Model):
             # nothing to fetch, and the websocket will return no notification.
             @self.env.cr.postcommit.add
             def notify():
-                with odoo.sql_db.db_connect('postgres').cursor() as cr:
+                with odoo.sql_db.db_connect(odoo.tools.config['db_name'] or 'postgres').cursor() as cr:
                     if ODOO_NOTIFY_FUNCTION:
                         query = sql.SQL("SELECT {}('imbus', %s)").format(sql.Identifier(ODOO_NOTIFY_FUNCTION))
                     else:
