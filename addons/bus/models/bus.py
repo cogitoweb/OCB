@@ -199,8 +199,9 @@ class ImDispatch(threading.Thread):
 
     def loop(self):
         """ Dispatch postgres notifications to the relevant websockets """
-        _logger.info("Bus.loop listen imbus on db postgres")
-        with odoo.sql_db.db_connect('postgres').cursor() as cr, \
+        _db = odoo.tools.config['db_name'] or 'postgres'
+        _logger.info("Bus.loop listen imbus on db %s", _db)
+        with odoo.sql_db.db_connect(_db).cursor() as cr, \
              selectors.DefaultSelector() as sel:
             cr.execute("listen imbus")
             cr.commit()
