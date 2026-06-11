@@ -21,3 +21,4 @@ from .mail import *
 from .func import *
 from .debugger import *
 from .date_utils import *
+from . import typing
