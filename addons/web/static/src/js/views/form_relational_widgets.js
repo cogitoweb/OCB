@@ -739,8 +739,247 @@ var FieldX2Many = AbstractManyField.extend({
             self.on("change:effective_readonly", self, destroy);
         });
         this.view.on("on_button_cancel", this, destroy);
+        this.view.on("view_content_has_changed", this, this._refresh_column_invisible_fields);
         this.is_started = true;
         this.reload_current_view();
+    },
+    /**
+     * Extracts the `column_invisible` modifiers defined on a x2many list/tree
+     * subview. These modifiers are evaluated later against the parent form
+     * record and then consumed by the legacy ListView as column visibility data.
+     *
+     * @param {Object} fields_view
+     * @returns {Object} field name -> normalized modifier domain/boolean
+     */
+    _extract_column_invisible_fields: function (fields_view) {
+        var self = this;
+        var columnInvisibleFields = {};
+        if (!fields_view || !fields_view.arch || !fields_view.arch.children) {
+            return columnInvisibleFields;
+        }
+        _.each(fields_view.arch.children, function (child) {
+            if (!child.attrs || !child.attrs.name) {
+                return;
+            }
+            var modifiers = child.attrs.modifiers ? (_.isObject(child.attrs.modifiers) ?
+                child.attrs.modifiers : JSON.parse(child.attrs.modifiers || '{}')) : {};
+            if ('column_invisible' in modifiers) {
+                columnInvisibleFields[child.attrs.name] =
+                    self._normalize_column_invisible_domain(modifiers.column_invisible);
+            } else if (child.attrs.column_invisible) {
+                columnInvisibleFields[child.attrs.name] =
+                    self._normalize_column_invisible_domain(child.attrs.column_invisible);
+            }
+        });
+        return columnInvisibleFields;
+    },
+    /**
+     * Refreshes extracted column_invisible declarations from the actual loaded
+     * list controller fields_view. In Odoo 10, the x2many field metadata may
+     * not preload the list/tree subview in `field.views`, so we must inspect the
+     * concrete controller once it has been instantiated.
+     *
+     * @param {Object} controller
+     */
+    _refresh_column_invisible_definitions_from_controller: function (controller) {
+        if (!controller || !controller.fields_view) {
+            return;
+        }
+        this.columnInvisibleFields = this._extract_column_invisible_fields(controller.fields_view);
+    },
+    /**
+     * Converts domains written with the Odoo 12 `parent.field_name` notation
+     * into domains that Odoo 10's form domain evaluator can understand. In this
+     * widget the available field manager is already the parent form, so the
+     * `parent.` prefix has to be removed before evaluation.
+     *
+     * @param {Array|Boolean} domain
+     * @returns {Array|Boolean}
+     */
+    _normalize_column_invisible_domain: function (domain) {
+        var self = this;
+        if (_.isString(domain) && domain.indexOf('parent.') === 0) {
+            return domain.slice(7);
+        }
+        if (!_.isArray(domain)) {
+            return domain;
+        }
+        if (domain.length >= 3 && _.isString(domain[0]) && _.isString(domain[1])) {
+            domain = domain.slice(0);
+            if (domain[0].indexOf('parent.') === 0) {
+                domain[0] = domain[0].slice(7);
+            }
+            return domain;
+        }
+        return _.map(domain, function (domainPart) {
+            return self._normalize_column_invisible_domain(domainPart);
+        });
+    },
+    /**
+     * Returns the current value of a parent form field, even if that field is
+     * not instantiated as a visible widget in the form renderer.
+     *
+     * @param {String} fieldName
+     * @returns {*}
+     */
+    _get_parent_field_value: function (fieldName) {
+        if (this.view.fields[fieldName]) {
+            return this.view.fields[fieldName].get_value();
+        }
+        if (this.view.datarecord && fieldName in this.view.datarecord) {
+            return this.view.datarecord[fieldName];
+        }
+        return undefined;
+    },
+    /**
+     * Builds a synthetic field map suitable for `data.compute_domain`, merging
+     * rendered form widgets with raw values already loaded in the parent record.
+     * This is necessary because some parent fields used by `column_invisible`
+     * are available on the record but not present as actual form widgets.
+     *
+     * @returns {Object}
+     */
+    _build_parent_modifier_eval_fields: function () {
+        var fields = _.extend({}, this.view.fields);
+        _.each(this.view.datarecord || {}, function (value, fieldName) {
+            if (!(fieldName in fields)) {
+                fields[fieldName] = {value: value};
+            }
+        });
+        return fields;
+    },
+    /**
+     * Extracts parent field names referenced by a normalized column_invisible
+     * modifier.
+     *
+     * @param {Array|Boolean|String} modifier
+     * @returns {Array}
+     */
+    _get_parent_field_names_from_modifier: function (modifier) {
+        var self = this;
+        if (_.isString(modifier)) {
+            return [modifier];
+        }
+        if (!_.isArray(modifier)) {
+            return [];
+        }
+        if (modifier.length >= 3 && _.isString(modifier[0]) && _.isString(modifier[1])) {
+            return [modifier[0]];
+        }
+        return _.chain(modifier)
+            .map(function (part) {
+                return self._get_parent_field_names_from_modifier(part);
+            })
+            .flatten()
+            .uniq()
+            .value();
+    },
+    /**
+     * Ensures the parent record contains all fields required to evaluate the
+     * current column_invisible modifiers, even if those parent fields are not
+     * part of the rendered form view.
+     *
+     * @returns {Deferred}
+     */
+    _ensure_parent_column_invisible_fields_loaded: function () {
+        var self = this;
+        var parentID = this.view.datarecord && this.view.datarecord.id;
+        var fieldNames = _.chain(this.columnInvisibleFields || {})
+            .values()
+            .map(function (modifier) {
+                return self._get_parent_field_names_from_modifier(modifier);
+            })
+            .flatten()
+            .uniq()
+            .value();
+        var missingFieldNames = _.filter(fieldNames, function (fieldName) {
+            return self._get_parent_field_value(fieldName) === undefined;
+        });
+
+        if (!parentID || !missingFieldNames.length) {
+            return $.when();
+        }
+
+        return new Model(this.view.model)
+            .call('read', [[parentID], missingFieldNames], {context: this.view.dataset.get_context()})
+            .then(function (records) {
+                if (records && records[0]) {
+                    _.extend(self.view.datarecord, records[0]);
+                }
+            });
+    },
+    /**
+     * Evaluates the extracted `column_invisible` modifiers against the parent
+     * form record.
+     *
+     * @returns {Object} field name -> evaluated boolean
+     */
+    _eval_column_invisible_fields: function () {
+        var self = this;
+        return _.mapObject(this.columnInvisibleFields || {}, function (modifier) {
+            if (_.isBoolean(modifier)) {
+                return modifier;
+            }
+            if (_.isString(modifier)) {
+                if (modifier === '1' || modifier.toLowerCase() === 'true') {
+                    return true;
+                }
+                if (modifier === '0' || modifier.toLowerCase() === 'false') {
+                    return false;
+                }
+                return !!self._get_parent_field_value(modifier);
+            }
+            try {
+                return data.compute_domain(modifier, self._build_parent_modifier_eval_fields());
+            } catch (error) {
+                console.warn(
+                    'Unable to evaluate column_invisible modifier for x2many field',
+                    self.name,
+                    modifier,
+                    error
+                );
+                return false;
+            }
+        });
+    },
+    /**
+     * Applies current evaluated column invisibility values to the active list
+     * controller.
+     *
+     * @param {Object} controller
+     */
+    _apply_column_invisible_fields: function (controller) {
+        var self = this;
+        if (!controller || _.isEmpty(this.columnInvisibleFields || {})) {
+            return $.when();
+        }
+        return $.when(this._ensure_parent_column_invisible_fields_loaded()).then(function () {
+            self.currentColumnInvisibleFields = self._eval_column_invisible_fields();
+            controller.column_invisible_fields = self.currentColumnInvisibleFields;
+        });
+    },
+    /**
+     * Re-evaluates column invisibility when the parent form changes and reloads
+     * the x2many list only when the evaluated visibility map actually changed.
+     */
+    _refresh_column_invisible_fields: function () {
+        var self = this;
+        if (_.isEmpty(this.columnInvisibleFields || {}) || !this.is_started) {
+            return;
+        }
+        var activeView = this.get_active_view();
+        if (!activeView || activeView.type !== "list" || !activeView.controller) {
+            return;
+        }
+        $.when(this._ensure_parent_column_invisible_fields_loaded()).then(function () {
+            var newEval = self._eval_column_invisible_fields();
+            if (_.isEqual(self.currentColumnInvisibleFields, newEval)) {
+                return;
+            }
+            self.currentColumnInvisibleFields = newEval;
+            activeView.controller.column_invisible_fields = self.currentColumnInvisibleFields;
+            self.reload_current_view();
+        });
     },
     load_views: function() {
         var self = this;
@@ -748,6 +987,8 @@ var FieldX2Many = AbstractManyField.extend({
         var view_types = this.node.attrs.mode;
         view_types = !!view_types ? view_types.split(",") : [this.default_view];
         var views = [];
+        this.columnInvisibleFields = {};
+        this.currentColumnInvisibleFields = {};
         _.each(view_types, function(view_type) {
             if (! _.include(["list", "tree", "graph", "kanban"], view_type)) {
                 throw new Error(_.str.sprintf(_t("View type '%s' is not supported in X2Many."), view_type));
@@ -773,6 +1014,7 @@ var FieldX2Many = AbstractManyField.extend({
                         reorderable: false,
                     });
                 }
+                self.columnInvisibleFields = self._extract_column_invisible_fields(view.fields_view);
             } else if (view.view_type === "kanban") {
                 _.extend(view.options, {
                     action_buttons: true,
@@ -799,18 +1041,27 @@ var FieldX2Many = AbstractManyField.extend({
         this.viewmanager.on("controller_inited", self, function(view_type, controller) {
             controller.x2m = self;
             if (view_type == "list") {
-                if (self.get("effective_readonly")) {
-                    controller.on('edit:before', self, function (e) {
-                        e.cancel = true;
-                    });
-                    _(controller.columns).find(function (column) {
-                        if (!(column instanceof list_widget_registry.get('field.handle'))) {
-                            return false;
-                        }
-                        column.modifiers.invisible = true;
-                        return true;
-                    });
-                }
+                self._refresh_column_invisible_definitions_from_controller(controller);
+                $.when(self._apply_column_invisible_fields(controller)).then(function () {
+                    if (!_.isEmpty(self.columnInvisibleFields || {})) {
+                        controller.reload_content();
+                    }
+                    if (self.get("effective_readonly")) {
+                        controller.on('edit:before', self, function (e) {
+                            e.cancel = true;
+                        });
+                        _(controller.columns).find(function (column) {
+                            if (!(column instanceof list_widget_registry.get('field.handle'))) {
+                                return false;
+                            }
+                            column.modifiers.invisible = true;
+                            return true;
+                        });
+                    }
+                }).always(function () {
+                    def.resolve();
+                });
+                return;
             } else if (view_type == "graph") {
                 self.reload_current_view();
             }

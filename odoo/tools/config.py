@@ -326,6 +326,10 @@ class configmanager(object):
         """
         self._parse_config(args)
         odoo.netsvc.init_logger()
+        if 'xml' in self.options['dev_mode']:
+            logging.getLogger(__name__).warning(
+                "XML developer mode is active: XML views will be read from the filesystem"
+            )
         odoo.modules.module.initialize_sys_path()
 
     def _parse_config(self, args=None):

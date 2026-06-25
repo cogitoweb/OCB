@@ -367,6 +367,28 @@ var ListView = View.extend({
         return this.reload_content();
     },
     /**
+     * Applies column-level invisibility modifiers already evaluated by the
+     * parent x2many widget.
+     *
+     * Odoo 10 only supports the static `tree_invisible` modifier at Column
+     * construction time. Later versions also support `column_invisible` on
+     * x2many sub-list columns, evaluated against the parent form record. The
+     * parent widget owns that evaluation; the list view only needs to consume
+     * the resulting boolean map and mark matching columns as invisible before
+     * `visible_columns` and aggregates are computed.
+     *
+     * @param {Object} columnInvisibleFields field name -> evaluated boolean
+     */
+    _apply_column_invisible_modifiers: function (columnInvisibleFields) {
+        columnInvisibleFields = columnInvisibleFields || {};
+        _.each(this.columns, function (column) {
+            var columnName = column.name || column.id;
+            if (columnName in columnInvisibleFields && columnInvisibleFields[columnName]) {
+                column.invisible = '1';
+            }
+        });
+    },
+    /**
      * Sets up the listview's columns: merges view and fields data, move
      * grouped-by columns to the front of the columns list and make them all
      * visible.
@@ -384,6 +406,7 @@ var ListView = View.extend({
         if (grouped) {
             this.columns.unshift(new ListView.MetaColumn('_group'));
         }
+        this._apply_column_invisible_modifiers(this.column_invisible_fields);
 
         this.visible_columns = _.filter(this.columns, function (column) {
             return column.invisible !== '1';
@@ -484,7 +507,7 @@ var ListView = View.extend({
             }
             record.trigger('change', record);
 
-            /* When a record is reloaded, there is a rendering lag because of the addition/suppression of 
+            /* When a record is reloaded, there is a rendering lag because of the addition/suppression of
             a table row. Since the list view editable need to wait for the end of this rendering lag before
             computing the position of the editable fields, a 100ms delay is added. */
             var def = $.Deferred();
@@ -909,7 +932,7 @@ ListView.List = Class.extend({
      *
      * @constructs instance.web.ListView.List
      * @extends instance.web.Class
-     * 
+     *
      * @param {Object} opts display options, identical to those of :js:class:`instance.web.ListView`
      */
     init: function (group, opts) {
@@ -1006,7 +1029,7 @@ ListView.List = Class.extend({
                       field = $target.closest('td').data('field'),
                        $row = $target.closest('tr'),
                   record_id = self.row_id($row);
-                
+
                 if ($target.attr('disabled')) {
                     return;
                 }
@@ -1412,7 +1435,7 @@ ListView.Groups = Class.extend({
                     }
                     group_label = _.str.escapeHTML(group_label);
                 }
-                    
+
                 // group_label is html-clean (through format or explicit
                 // escaping if format failed), can inject straight into HTML
                 $group_column.html(_.str.sprintf("%s (%d)",
@@ -1720,6 +1743,12 @@ var Column = Class.extend({
 
         if (this.modifiers['tree_invisible']) {
             this.invisible = '1';
+        } else if (
+            this.column_invisible === '1' ||
+            this.column_invisible === 'true' ||
+            this.column_invisible === 'True'
+        ) {
+            this.invisible = '1';
         } else { delete this.invisible; }
     },
     modifiers_for: function (fields) {
@@ -1809,7 +1838,7 @@ var MetaColumn = Column.extend({
     }
 });
 // to do: do this in a better way (communicate with view_list_editable)
-ListView.MetaColumn = MetaColumn;  
+ListView.MetaColumn = MetaColumn;
 
 var ColumnButton = Column.extend({
     /**
