@@ -136,7 +136,7 @@
             <field name="name">Payments</field>
             <field name="res_model">account.payment</field>
             <field name="view_type">form</field>
-            <field name="view_mode">tree,form,graph</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
             <field name="context">{'default_payment_type': 'inbound', 'default_partner_type': 'customer'}</field>
             <field name="domain">[('partner_type', '=', 'customer')]</field>
             <field name="view_id" ref="view_account_payment_tree"/>
