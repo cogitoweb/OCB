@@ -2586,12 +2586,23 @@ class BaseModel(object, metaclass=MetaModel):
     def _auto_end(self):
         """ Create the foreign keys recorded by _auto_init. """
         cr = self._cr
+        # La visibilita' va chiesta al search_path, non allo schema 'public'.
+        #
+        # Con un ruolo che ha lo stesso nome di uno schema esistente, il
+        # search_path di serie ("$user", public) fa nascere ogni tabella nuova
+        # in QUELLO schema: il controllo su 'public' rispondeva falso e questo
+        # metodo saltava in silenzio la creazione di TUTTE le chiavi esterne.
+        # Su questa installazione erano 26 tabelle senza un solo vincolo,
+        # maintenance_plan e purchase_requisition comprese.
+        #
+        # pg_table_is_visible risponde alla domanda giusta -- "questa tabella
+        # la vedo con il search_path corrente?" -- che e' la stessa a cui
+        # obbedisce l'ALTER TABLE eseguito subito dopo.
         check = ("SELECT exists(SELECT 1 "
                  "FROM   pg_catalog.pg_class c "
-                 "JOIN   pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
-                 "WHERE  n.nspname = 'public' "
-                 "AND    c.relname = '%s' "
-                 "AND    c.relkind = 'r') res")
+                 "WHERE  c.relname = '%s' "
+                 "AND    c.relkind = 'r' "
+                 "AND    pg_catalog.pg_table_is_visible(c.oid)) res")
 
         query = 'ALTER TABLE IF EXISTS "%s" ADD FOREIGN KEY ("%s") REFERENCES "%s" ON DELETE %s'
         for table1, column, table2, ondelete, module in self._foreign_keys:
